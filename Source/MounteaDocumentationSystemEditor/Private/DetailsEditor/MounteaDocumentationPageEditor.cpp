@@ -107,64 +107,88 @@ TSharedRef<SDockTab> FMounteaDocumentationPageEditor::SpawnMarkdownTab(const FSp
 	return SNew(SDockTab)
 		.TabRole(ETabRole::PanelTab)
 		[
-			SNew(SScrollBox)
-			.Orientation(Orient_Vertical)
+			SNew(SOverlay)
 
-			+ SScrollBox::Slot()
+			// Background Layer
+			+ SOverlay::Slot()
 			[
 				SNew(SHorizontalBox)
 
-				// Markdown Editor
+				// Editor Background
 				+ SHorizontalBox::Slot()
 				.FillWidth(0.5f)
 				[
-					SNew(SScrollBox)
-					.Orientation(Orient_Vertical)
+					SNew(SBorder)
+					.Padding(0)
+					.BorderImage(FAppStyle::GetBrush("Brushes.Panel"))
+				]
 
-					+ SScrollBox::Slot()
+				// Preview Background
+				+ SHorizontalBox::Slot()
+				.FillWidth(0.5f)
+				[
+					SNew(SBorder)
+					.Padding(0)
+					.BorderImage(FAppStyle::GetBrush("Brushes.Background"))
+				]
+			]
+
+			// Foreground Layer (Scrollable Content)
+			+ SOverlay::Slot()
+			[
+				SNew(SScrollBox)
+				.Orientation(Orient_Vertical)
+
+				+ SScrollBox::Slot()
+				[
+					SNew(SHorizontalBox)
+
+					// Markdown Editor (With Line Numbers)
+					+ SHorizontalBox::Slot()
+					.FillWidth(0.5f)
 					[
-						SNew(SHorizontalBox)
-
-						// Line Numbers Column
-						+ SHorizontalBox::Slot()
-						.AutoWidth()
+						SNew(SBorder)
+						.Padding(10)
+						.BorderBackgroundColor(FLinearColor::Transparent)
 						[
-							SNew(SBorder)
-							.Padding(10)
-							.BorderImage(FAppStyle::GetBrush("Brushes.Panel"))
+							SNew(SHorizontalBox)
+
+							// Line Numbers Column
+							+ SHorizontalBox::Slot()
+							.AutoWidth()
 							[
-								SNew(STextBlock)
-								.Text_Lambda([this]() -> FText { return GenerateLineNumbers(); })
-								.Justification(ETextJustify::Right)
-								.ColorAndOpacity(FSlateColor(FLinearColor::Gray))
+								SNew(SBorder)
+								.Padding(10)
+								.BorderBackgroundColor(FLinearColor::Transparent)
+								[
+									SNew(STextBlock)
+									.Text_Lambda([this]() -> FText { return GenerateLineNumbers(); })
+									.Justification(ETextJustify::Right)
+									.ColorAndOpacity(FSlateColor(FLinearColor(1.f, 1.f, 1.f, 0.3f)))
+								]
 							]
-						]
 
-						// Markdown Input (Editor)
-						+ SHorizontalBox::Slot()
-						.FillWidth(1.0f)
-						[
-							SNew(SBorder)
-							.Padding(10)
-							.BorderImage(FAppStyle::GetBrush("Brushes.Panel"))
+							// Markdown Input (Editor)
+							+ SHorizontalBox::Slot()
+							.FillWidth(1.0f)
 							[
-								EditableTextWidget.ToSharedRef()
+								SNew(SBorder)
+								.Padding(10)
+								.BorderBackgroundColor(FLinearColor::Transparent)
+								[
+									EditableTextWidget.ToSharedRef()
+								]
 							]
 						]
 					]
-				]
 
-				// Rendered Markdown Preview
-				+ SHorizontalBox::Slot()
-				[
-					SNew(SBorder)
-					.Padding(10)
-					.BorderImage(FAppStyle::GetBrush("Brushes.Background"))
+					// Rendered Markdown Preview
+					+ SHorizontalBox::Slot()
+					.FillWidth(0.5f)
 					[
-						SNew(SScrollBox)
-						.Orientation(Orient_Vertical)
-
-						+ SScrollBox::Slot()
+						SNew(SBorder)
+						.Padding(10)
+						.BorderBackgroundColor(FLinearColor::Transparent)
 						[
 							SNew(STextBlock)
 							.AutoWrapText(true)
@@ -175,6 +199,7 @@ TSharedRef<SDockTab> FMounteaDocumentationPageEditor::SpawnMarkdownTab(const FSp
 			]
 		];
 }
+
 
 FText FMounteaDocumentationPageEditor::GenerateLineNumbers() const
 {
