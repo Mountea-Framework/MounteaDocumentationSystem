@@ -7,6 +7,7 @@
 #include "MounteaDocumentationContainer.generated.h"
 
 class UMounteaDocumentationPage;
+struct FMounteaDocumentationPageWrapper;
 
 /**
  * 
@@ -18,8 +19,8 @@ class MOUNTEADOCUMENTATIONSYSTEM_API UMounteaDocumentationContainer : public UPr
 	
 public:
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Documentation")
-	TMap<int32, TObjectPtr<UMounteaDocumentationPage>> Pages;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Documentation", meta=(TitleProperty="PageTitle", ShowOnlyInnerProperties))
+	TArray<FMounteaDocumentationPageWrapper> Pages;
 
 protected:
 	

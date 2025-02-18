@@ -192,7 +192,7 @@ TSharedRef<SDockTab> FMounteaDocumentationPageEditor::SpawnMarkdownTab(const FSp
 						[
 							SNew(STextBlock)
 							.AutoWrapText(true)
-							.Text_Lambda([this]() -> FText { return IsValid(EditedPage) ? EditedPage->MarkdownPageBody : FText::GetEmpty(); })
+							.Text_Lambda([this]() -> FText { return IsValid(EditedPage) ? EditedPage->MarkdownPageContent : FText::GetEmpty(); })
 						]
 					]
 				]
@@ -200,21 +200,34 @@ TSharedRef<SDockTab> FMounteaDocumentationPageEditor::SpawnMarkdownTab(const FSp
 		];
 }
 
-
 FText FMounteaDocumentationPageEditor::GenerateLineNumbers() const
 {
-	if (!IsValid(EditedPage))
+	if (!IsValid(EditedPage) || !EditableTextWidget.IsValid())
 		return FText::GetEmpty();
 
-	const FString markdownText = EditedPage->PageBody.ToString();
+	const FString markdownText = EditedPage->PageContent.ToString();
 	TArray<FString> Lines;
-	markdownText.ParseIntoArray(Lines, TEXT("\n"), false); // false = do not cull empty lines
+	markdownText.ParseIntoArray(Lines, TEXT("\n"), false); // Preserve empty lines
 
-	int32 lineCount = Lines.Num() > 0 ? Lines.Num() : 1;
+	// Get the actual text wrapping width
+	float WrapWidth = EditableTextWidget->GetCachedGeometry().GetLocalSize().X * 0.975f;
+	if (WrapWidth <= 0) WrapWidth = 800.0f; // Fallback in case geometry isn't valid
+
+	// Estimate wrapped lines dynamically
+	int32 EstimatedWrappedLines = 0;
+	for (const FString& Line : Lines)
+	{
+		int32 LineLength = Line.Len();
+		EstimatedWrappedLines += FMath::CeilToInt(LineLength / (WrapWidth / 10.0f)); // Adjust division factor if needed
+	}
+
+	int32 TotalLines = FMath::Max(Lines.Num(), EstimatedWrappedLines);
 
 	FString lineNumbers;
-	for (int32 i = 1; i <= lineCount; i++)
+	for (int32 i = 1; i <= TotalLines; i++)
+	{
 		lineNumbers += FString::Printf(TEXT("%d\n"), i);
+	}
 
 	return FText::FromString(lineNumbers);
 }
@@ -224,10 +237,7 @@ FReply FMounteaDocumentationPageEditor::HandleTabPress(const FGeometry& MyGeomet
 	if (KeyEvent.GetKey() == EKeys::Tab) // Detect Tab Key
 	{
 		if (IsValid(EditedPage))
-		{
-			// Insert Tab at Cursor Position
 			EditableTextWidget->InsertTextAtCursor(TEXT("\t"));
-		}
 
 		return FReply::Handled(); // Prevents focus loss
 	}
@@ -238,15 +248,19 @@ FReply FMounteaDocumentationPageEditor::HandleTabPress(const FGeometry& MyGeomet
 void FMounteaDocumentationPageEditor::SpawnEditorTextWidget()
 {
 	EditableTextWidget = SNew(SMultiLineEditableText)
-	.Text_Lambda([this]() -> FText { return IsValid(EditedPage) ? EditedPage->PageBody : FText::GetEmpty(); })
+	.Text_Lambda([this]() -> FText { return IsValid(EditedPage) ? EditedPage->PageContent : FText::GetEmpty(); })
 	.OnTextChanged_Lambda([this](const FText& NewText)
 	{
 		if (IsValid(EditedPage))
 		{
-			EditedPage->PageBody = NewText;
-			EditedPage->MarkdownPageBody = FText::FromString(TEXT("[Rendered Markdown]")); // TODO: Process Markdown
+			EditedPage->PageContent = NewText;
+			EditedPage->MarkdownPageContent = FText::FromString(TEXT("[Rendered Markdown]")); // TODO: Process Markdown
 		}
 	})
+	/*.WrapTextAt_Lambda([this]() -> float
+	{
+		return EditableTextWidget.IsValid() ? EditableTextWidget->GetCachedGeometry().GetLocalSize().X * 0.95f : 800.0f;
+	})*/
 	.AutoWrapText(true)
 	.OnKeyDownHandler(this, &FMounteaDocumentationPageEditor::HandleTabPress);
 }

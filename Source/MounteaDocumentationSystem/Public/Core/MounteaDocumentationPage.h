@@ -24,9 +24,6 @@ class MOUNTEADOCUMENTATIONSYSTEM_API UMounteaDocumentationPage : public UPrimary
 	GENERATED_BODY()
 
 public:
-	
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Page")
-	FText PageTitle;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Source")
 	EMounteaDocumentationPageType PageType;
@@ -35,8 +32,20 @@ public:
 	FFilePath MarkdownFile;
 
 	UPROPERTY(BlueprintReadOnly, Category="Context", meta=(MultiLine=true))
-	FText PageBody;
+	FText PageContent;
 
 	UPROPERTY(BlueprintReadOnly, Category="Context", meta=(MultiLine=true))
-	FText MarkdownPageBody;
+	FText MarkdownPageContent;
+};
+
+USTRUCT(BlueprintType)
+struct FMounteaDocumentationPageWrapper
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Page")
+	FText PageTitle;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Page")
+	TObjectPtr<UMounteaDocumentationPage> Page;
 };

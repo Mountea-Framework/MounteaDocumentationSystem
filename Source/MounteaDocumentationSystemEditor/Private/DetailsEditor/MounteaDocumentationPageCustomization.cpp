@@ -58,22 +58,22 @@ void FMounteaDocumentationPageCustomization::CustomizeDetails(IDetailLayoutBuild
 
 FText FMounteaDocumentationPageCustomization::GetMarkdownText() const
 {
-	return TargetPage.IsValid() ? TargetPage->PageBody : FText::GetEmpty();
+	return TargetPage.IsValid() ? TargetPage->PageContent : FText::GetEmpty();
 }
 
 FText FMounteaDocumentationPageCustomization::GetRenderedMarkdownText() const
 {
 	// Placeholder - integrate Markdown parser here
-	return TargetPage.IsValid() ? TargetPage->MarkdownPageBody : FText::GetEmpty();
+	return TargetPage.IsValid() ? TargetPage->MarkdownPageContent : FText::GetEmpty();
 }
 
 void FMounteaDocumentationPageCustomization::OnMarkdownTextChanged(const FText& NewText)
 {
 	if (TargetPage.IsValid())
 	{
-		TargetPage->PageBody = NewText;
+		TargetPage->PageContent = NewText;
 		// Process Markdown and update preview
-		TargetPage->MarkdownPageBody = FText::FromString(TEXT("[Rendered Markdown]"));
+		TargetPage->MarkdownPageContent = FText::FromString(TEXT("[Rendered Markdown]"));
 	}
 }
 
