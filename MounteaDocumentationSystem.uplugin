@@ -1,0 +1,27 @@
+{
+	"FileVersion": 3,
+	"Version": 1,
+	"VersionName": "0.0.0.1",
+	"FriendlyName": "MounteaDocumentationSystem",
+	"Description": "",
+	"Category": "Mountea Framework",
+	"CreatedBy": "Dominik (Pavlicek) Morse",
+	"CreatedByURL": "https://github.com/Mountea-Framework",
+	"DocsURL": "https://github.com/Mountea-Framework/MounteaDialogueSystem/wiki",
+	"SupportURL": "https://bit.ly/DominikPavlicek_SupportServer",
+	"EngineVersion": "5.1.0",
+	"CanContainContent": true,
+	"Installed": true,
+	"Modules": [
+		{
+			"Name": "MounteaDocumentationSystem",
+			"Type": "Runtime",
+			"LoadingPhase": "Default"
+		},
+		{
+			"Name": "MounteaDocumentationSystemEditor",
+			"Type": "Editor",
+			"LoadingPhase": "PostEngineInit"
+		}
+	]
+}
