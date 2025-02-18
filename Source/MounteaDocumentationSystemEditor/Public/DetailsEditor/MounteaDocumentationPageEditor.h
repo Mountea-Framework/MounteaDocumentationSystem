@@ -7,6 +7,8 @@
 #include "CoreMinimal.h"
 #include "Toolkits/AssetEditorToolkit.h"
 
+class SScrollBox;
+class SMultiLineEditableText;
 class UMounteaDocumentationPage;
 
 class FMounteaDocumentationPageEditor : public FAssetEditorToolkit
@@ -24,12 +26,20 @@ public:
 	virtual void UnregisterTabSpawners(const TSharedRef<class FTabManager>& InTabManager) override;
 
 	void OnFinishedChangingProperties(const FPropertyChangedEvent& PropertyChangedEvent);
+	FText GenerateLineNumbers() const;
+	FReply HandleTabPress(const FGeometry& MyGeometry, const FKeyEvent& KeyEvent);
+
+	void SpawnEditorTextWidget();
 
 private:
 	TSharedRef<SDockTab> SpawnMarkdownTab(const FSpawnTabArgs& Args);
+	
+
 	TSharedRef<SDockTab> SpawnDetailsTab(const FSpawnTabArgs& Args);
+	
 	TObjectPtr<UMounteaDocumentationPage> EditedPage;
 	TSharedPtr<class IDetailsView> PropertyWidget;
+	TSharedPtr<SMultiLineEditableText> EditableTextWidget;
 };
 
 

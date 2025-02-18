@@ -23,6 +23,7 @@ public class MounteaDocumentationSystemEditor : ModuleRules
 				"SlateCore",
 				
 				"EditorStyle",
+				"InputCore",
 				
 				"MounteaDocumentationSystem"
 			});

@@ -102,52 +102,129 @@ void FMounteaDocumentationPageEditor::UnregisterTabSpawners(const TSharedRef<cla
 
 TSharedRef<SDockTab> FMounteaDocumentationPageEditor::SpawnMarkdownTab(const FSpawnTabArgs& Args)
 {
+	SpawnEditorTextWidget();
+
 	return SNew(SDockTab)
 		.TabRole(ETabRole::PanelTab)
 		[
-			SNew(SHorizontalBox)
+			SNew(SScrollBox)
+			.Orientation(Orient_Vertical)
 
-			// Markdown Input (Editor)
-			+ SHorizontalBox::Slot()
-			.FillWidth(0.5f)
+			+ SScrollBox::Slot()
 			[
-				SNew(SBorder)
-				.Padding(10)
-				.BorderImage(FAppStyle::GetBrush("Brushes.Panel"))
-				[
-					SNew(SMultiLineEditableText)
-					.Text_Lambda([this]() -> FText { return IsValid(EditedPage) ? EditedPage->PageBody : FText::GetEmpty(); })
-					.OnTextChanged_Lambda([this](const FText& NewText)
-					{
-						if (IsValid(EditedPage))
-						{
-							EditedPage->PageBody = NewText;
-							EditedPage->MarkdownPageBody = FText::FromString(TEXT("[Rendered Markdown]")); // TODO: Process Markdown
-						}
-					})
-				]
-			]
+				SNew(SHorizontalBox)
 
-			// Rendered Markdown Preview
-			+ SHorizontalBox::Slot()	
-			.FillWidth(0.5f)
-			[
-				SNew(SBorder)
-				.Padding(10)
-				.BorderImage(FAppStyle::GetBrush("Brushes.Background"))
+				// Markdown Editor
+				+ SHorizontalBox::Slot()
+				.FillWidth(0.5f)
 				[
 					SNew(SScrollBox)
+					.Orientation(Orient_Vertical)
+
 					+ SScrollBox::Slot()
 					[
-						SNew(STextBlock)
-						.AutoWrapText(true)
-						.Text_Lambda([this]() -> FText { return IsValid(EditedPage) ? EditedPage->MarkdownPageBody : FText::GetEmpty(); })
+						SNew(SHorizontalBox)
+
+						// Line Numbers Column
+						+ SHorizontalBox::Slot()
+						.AutoWidth()
+						[
+							SNew(SBorder)
+							.Padding(10)
+							.BorderImage(FAppStyle::GetBrush("Brushes.Panel"))
+							[
+								SNew(STextBlock)
+								.Text_Lambda([this]() -> FText { return GenerateLineNumbers(); })
+								.Justification(ETextJustify::Right)
+								.ColorAndOpacity(FSlateColor(FLinearColor::Gray))
+							]
+						]
+
+						// Markdown Input (Editor)
+						+ SHorizontalBox::Slot()
+						.FillWidth(1.0f)
+						[
+							SNew(SBorder)
+							.Padding(10)
+							.BorderImage(FAppStyle::GetBrush("Brushes.Panel"))
+							[
+								EditableTextWidget.ToSharedRef()
+							]
+						]
+					]
+				]
+
+				// Rendered Markdown Preview
+				+ SHorizontalBox::Slot()
+				[
+					SNew(SBorder)
+					.Padding(10)
+					.BorderImage(FAppStyle::GetBrush("Brushes.Background"))
+					[
+						SNew(SScrollBox)
+						.Orientation(Orient_Vertical)
+
+						+ SScrollBox::Slot()
+						[
+							SNew(STextBlock)
+							.AutoWrapText(true)
+							.Text_Lambda([this]() -> FText { return IsValid(EditedPage) ? EditedPage->MarkdownPageBody : FText::GetEmpty(); })
+						]
 					]
 				]
 			]
 		];
 }
 
+FText FMounteaDocumentationPageEditor::GenerateLineNumbers() const
+{
+	if (!IsValid(EditedPage))
+		return FText::GetEmpty();
+
+	const FString markdownText = EditedPage->PageBody.ToString();
+	TArray<FString> Lines;
+	markdownText.ParseIntoArray(Lines, TEXT("\n"), false); // false = do not cull empty lines
+
+	int32 lineCount = Lines.Num() > 0 ? Lines.Num() : 1;
+
+	FString lineNumbers;
+	for (int32 i = 1; i <= lineCount; i++)
+		lineNumbers += FString::Printf(TEXT("%d\n"), i);
+
+	return FText::FromString(lineNumbers);
+}
+
+FReply FMounteaDocumentationPageEditor::HandleTabPress(const FGeometry& MyGeometry, const FKeyEvent& KeyEvent)
+{
+	if (KeyEvent.GetKey() == EKeys::Tab) // Detect Tab Key
+	{
+		if (IsValid(EditedPage))
+		{
+			// Insert Tab at Cursor Position
+			EditableTextWidget->InsertTextAtCursor(TEXT("\t"));
+		}
+
+		return FReply::Handled(); // Prevents focus loss
+	}
+
+	return FReply::Unhandled();
+}
+
+void FMounteaDocumentationPageEditor::SpawnEditorTextWidget()
+{
+	EditableTextWidget = SNew(SMultiLineEditableText)
+	.Text_Lambda([this]() -> FText { return IsValid(EditedPage) ? EditedPage->PageBody : FText::GetEmpty(); })
+	.OnTextChanged_Lambda([this](const FText& NewText)
+	{
+		if (IsValid(EditedPage))
+		{
+			EditedPage->PageBody = NewText;
+			EditedPage->MarkdownPageBody = FText::FromString(TEXT("[Rendered Markdown]")); // TODO: Process Markdown
+		}
+	})
+	.AutoWrapText(true)
+	.OnKeyDownHandler(this, &FMounteaDocumentationPageEditor::HandleTabPress);
+}
 
 TSharedRef<SDockTab> FMounteaDocumentationPageEditor::SpawnDetailsTab(const FSpawnTabArgs& Args)
 {
