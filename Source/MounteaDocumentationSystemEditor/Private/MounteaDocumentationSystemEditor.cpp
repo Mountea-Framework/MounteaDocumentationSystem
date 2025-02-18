@@ -12,6 +12,7 @@ DEFINE_LOG_CATEGORY(MounteaDocumentationSystemEditor);
 void FMounteaDocumentationSystemEditor::StartupModule()
 {
 	// Register Custom Detail Panels
+	/*
 	{
 		FPropertyEditorModule& PropertyModule = FModuleManager::LoadModuleChecked<FPropertyEditorModule>("PropertyEditor");
 		TArray<FOnGetDetailCustomizationInstance> CustomClassLayouts =
@@ -27,7 +28,8 @@ void FMounteaDocumentationSystemEditor::StartupModule()
 			PropertyModule.RegisterCustomClassLayout(RegisteredCustomClassLayouts[i], CustomClassLayouts[i]);
 		}
 	}
-
+	*/
+	
 	// Asset Actions
 	{
 		AssetActions.Add(MakeShared<FMounteaDocumentationPageAssetAction>());

@@ -45,14 +45,14 @@ void FMounteaDocumentationPageEditor::InitMounteaDocumentationEditor(const ETool
 			->Split(
 				// Left side: Details Panel
 				FTabManager::NewStack()
-				->SetSizeCoefficient(0.3f)
+				->SetSizeCoefficient(0.15f)
 				->AddTab(MounteaDocumentationPropertyID, ETabState::OpenedTab)
 				->SetHideTabWell(true)
 			)
 			->Split(
 				// Right side: Markdown Editor + Preview
 				FTabManager::NewStack()
-				->SetSizeCoefficient(0.7f)
+				->SetSizeCoefficient(0.85f)
 				->AddTab(MarkdownTabId, ETabState::OpenedTab)
 				->SetHideTabWell(true)
 			)
@@ -107,36 +107,47 @@ TSharedRef<SDockTab> FMounteaDocumentationPageEditor::SpawnMarkdownTab(const FSp
 		[
 			SNew(SHorizontalBox)
 
-			// Markdown Input
+			// Markdown Input (Editor)
 			+ SHorizontalBox::Slot()
 			.FillWidth(0.5f)
 			[
-				SNew(SMultiLineEditableText)
-				.Text_Lambda([this]() -> FText { return IsValid(EditedPage) ? EditedPage->PageBody : FText::GetEmpty(); })
-				.OnTextChanged_Lambda([this](const FText& NewText)
-				{
-					if (IsValid(EditedPage))
+				SNew(SBorder)
+				.Padding(10)
+				.BorderImage(FAppStyle::GetBrush("Brushes.Panel"))
+				[
+					SNew(SMultiLineEditableText)
+					.Text_Lambda([this]() -> FText { return IsValid(EditedPage) ? EditedPage->PageBody : FText::GetEmpty(); })
+					.OnTextChanged_Lambda([this](const FText& NewText)
 					{
-						EditedPage->PageBody = NewText;
-						EditedPage->MarkdownPageBody = FText::FromString(TEXT("[Rendered Markdown]")); // TODO: Process Markdown
-					}
-				})
+						if (IsValid(EditedPage))
+						{
+							EditedPage->PageBody = NewText;
+							EditedPage->MarkdownPageBody = FText::FromString(TEXT("[Rendered Markdown]")); // TODO: Process Markdown
+						}
+					})
+				]
 			]
 
 			// Rendered Markdown Preview
-			+ SHorizontalBox::Slot()
+			+ SHorizontalBox::Slot()	
 			.FillWidth(0.5f)
 			[
-				SNew(SScrollBox)
-				+ SScrollBox::Slot()
+				SNew(SBorder)
+				.Padding(10)
+				.BorderImage(FAppStyle::GetBrush("Brushes.Background"))
 				[
-					SNew(STextBlock)
-					.AutoWrapText(true)
-					.Text_Lambda([this]() -> FText { return IsValid(EditedPage) ? EditedPage->MarkdownPageBody : FText::GetEmpty(); })
+					SNew(SScrollBox)
+					+ SScrollBox::Slot()
+					[
+						SNew(STextBlock)
+						.AutoWrapText(true)
+						.Text_Lambda([this]() -> FText { return IsValid(EditedPage) ? EditedPage->MarkdownPageBody : FText::GetEmpty(); })
+					]
 				]
 			]
 		];
 }
+
 
 TSharedRef<SDockTab> FMounteaDocumentationPageEditor::SpawnDetailsTab(const FSpawnTabArgs& Args)
 {
