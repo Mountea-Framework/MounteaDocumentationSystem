@@ -20,44 +20,53 @@ void FMarkdownTextMarshaller::SetText(const FString& SourceString, FTextLayout& 
 
 	TArray<FTextRange> LineRanges;
 	FTextRange::CalculateLineRangesFromString(SourceString, LineRanges);
-	
+
 	const UMounteaDocumentationSystemEditorSettings* EditorSettings = GetDefault<UMounteaDocumentationSystemEditorSettings>();
 	const FSlateFontInfo DefaultFont = EditorSettings->GetEditorFont();
 
-	for (const FTextRange& LineRange : LineRanges)
-	{
-		TSharedRef<FString> LineText = MakeShared<FString>(SourceString.Mid(LineRange.BeginIndex, LineRange.Len()));
-		TArray<TSharedRef<IRun>> Runs;
-		
-		FSlateFontInfo CustomFont = DefaultFont;
-		FLinearColor TextColor = FLinearColor::White;
-		const FLinearColor highlightedColor = FLinearColor(FColor::FromHex("569cd6"));
+	UE_LOG(LogTemp, Warning, TEXT("Applying font and color to %d lines"), LineRanges.Num());
 
-		// Markdown syntax highlighting while keeping the user's font
-		if (LineText->StartsWith("# "))
+	for (int32 i = 0; i < LineRanges.Num(); i++)
+	{
+		const FTextRange& LineRange = LineRanges[i];
+		FString LineText = SourceString.Mid(LineRange.BeginIndex, LineRange.Len());
+		TSharedRef<FString> SharedLineText = MakeShared<FString>(LineText);
+		TArray<TSharedRef<IRun>> Runs;
+
+		// Determine the color
+		FLinearColor TextColor = FLinearColor::White;
+		const FLinearColor highlightColor = FLinearColor(FColor::FromHex("569cd6"));;
+		if (LineText.StartsWith("# ")) // Headings
 		{
-			TextColor = highlightedColor;
+			TextColor = highlightColor;
 		}
-		else if (LineText->StartsWith("**") && LineText->EndsWith("**"))
+		else if (LineText.StartsWith("**") && LineText.EndsWith("**")) // Bold
 		{
-			TextColor = highlightedColor;
+			TextColor =  highlightColor;
 		}
-		else if (LineText->StartsWith("_") && LineText->EndsWith("_"))
+		else if (LineText.StartsWith("_") && LineText.EndsWith("_")) // Italic
 		{
-			TextColor = highlightedColor;
+			TextColor =  highlightColor;
 		}
-		else if (LineText->Contains("[") && LineText->Contains("]("))
+		else if (LineText.Contains("[") && LineText.Contains("](")) // Links
 		{
-			TextColor = highlightedColor;
+			TextColor =  highlightColor;
 		}
-		
+
+		UE_LOG(LogTemp, Warning, TEXT("Line %d: '%s' -> Color: R=%.2f G=%.2f B=%.2f"),
+			i + 1, *LineText, TextColor.R, TextColor.G, TextColor.B);
+
 		FTextBlockStyle TextStyle;
-		TextStyle.SetFont(CustomFont);
+		TextStyle.SetFont(DefaultFont);
 		TextStyle.SetColorAndOpacity(TextColor);
 
-		Runs.Add(FSlateTextRun::Create(FRunInfo(), LineText, TextStyle));
-		LinesToAdd.Emplace(MoveTemp(LineText), MoveTemp(Runs));
+		TSharedRef<FSlateTextRun> TextRun = FSlateTextRun::Create(FRunInfo(), SharedLineText, TextStyle);
+		Runs.Add(TextRun);
+
+		LinesToAdd.Emplace(SharedLineText, MoveTemp(Runs));
 	}
+
+	UE_LOG(LogTemp, Warning, TEXT("Finished processing %d lines"), LinesToAdd.Num());
 
 	TargetTextLayout.AddLines(LinesToAdd);
 }
