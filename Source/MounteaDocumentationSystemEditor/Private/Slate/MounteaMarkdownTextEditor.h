@@ -26,4 +26,3 @@ private:
 	TSharedPtr<FMarkdownTextMarshaller> MarkdownMarshaller;
 	TWeakObjectPtr<UMounteaDocumentationPage> EditedPage;
 };
-

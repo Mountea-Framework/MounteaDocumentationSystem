@@ -17,6 +17,7 @@ public:
 
 	void Construct(const FArguments& InArgs);
 
+	/** Call this whenever the editor geometry or text changes to update line numbers, etc. */
 	void UpdateMarkdownEditor();
 
 	virtual void Tick(const FGeometry& AllottedGeometry, const double InCurrentTime, const float InDeltaTime) override;
@@ -27,11 +28,11 @@ public:
 
 	FSlateFontInfo GetEditorFont() const;
 	FSlateColor GetLineNumberColor() const;
+	int32 CalculateManualWrappedLineCount() const;
 
 private:
-	FReply HandleTabPress(const FGeometry& MyGeometry, const FKeyEvent& KeyEvent);
-
-	TWeakObjectPtr<UMounteaDocumentationPage> EditedPage;
+	TWeakObjectPtr<class UMounteaDocumentationPage> EditedPage;
 	TSharedPtr<SMounteaMarkdownTextEditor> EditableTextWidget;
 };
+
 

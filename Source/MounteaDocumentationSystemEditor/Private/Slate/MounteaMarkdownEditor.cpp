@@ -4,6 +4,7 @@
 
 #include "MounteaMarkdownTextEditor.h"
 #include "Core/MounteaDocumentationPage.h"
+#include "Fonts/FontMeasure.h"
 #include "Settings/MounteaDocumentationSystemEditorSettings.h"
 
 void SMounteaMarkdownEditor::Construct(const FArguments& InArgs)
@@ -31,6 +32,7 @@ void SMounteaMarkdownEditor::UpdateMarkdownEditor()
 				SNew(STextBlock)
 				.Text(this, &SMounteaMarkdownEditor::GetLineNumbers)
 				.Justification(ETextJustify::Right)
+				.Font(GetEditorFont())
 				.ColorAndOpacity(this, &SMounteaMarkdownEditor::GetLineNumberColor)
 			]
 		]
@@ -61,6 +63,9 @@ void SMounteaMarkdownEditor::Tick(const FGeometry& AllottedGeometry, const doubl
 	if (EditableTextWidget.IsValid())
 	{
 		EditableTextWidget->UpdateEditorFont(GetEditorFont());
+		const float WrapWidth = AllottedGeometry.GetLocalSize().X - 40.0f;
+		EditableTextWidget->SetWrapTextAt(WrapWidth);
+		
 		Invalidate(EInvalidateWidget::LayoutAndVolatility);
 	}	
 }
@@ -76,46 +81,6 @@ void SMounteaMarkdownEditor::SetText(const FText& NewText)
 		EditedPage->PageContent = NewText;
 }
 
-FText SMounteaMarkdownEditor::GetLineNumbers() const
-{
-	auto editorSettings = GetMutableDefault<UMounteaDocumentationSystemEditorSettings>();
-	
-	if (!IsValid(EditedPage.Get()) || !EditableTextWidget.IsValid())
-		return FText::GetEmpty();
-
-	const FString markdownText = EditedPage->PageContent.ToString();
-	TArray<FString> Lines;
-	markdownText.ParseIntoArray(Lines, TEXT("\n"), false);
-
-	float WrapWidth = EditableTextWidget->GetCachedGeometry().GetLocalSize().X;
-	if (WrapWidth <= 0) WrapWidth = 800.0f;
-
-	/*
-	const float fontSize = EditableTextWidget->GetFont().Size;
-	constexpr float baseFontSize = 10.0f;
-	constexpr float baseCharWidth = 6.0f;
-	*/
-	const float estimatedCharWidth = editorSettings->EstimatedCharWidth;
-
-	int32 wrappedLineCount = 0;
-	for (const FString& Line : Lines)
-	{
-		int32 lineLength = Line.Len();
-		float estimatedCharsPerLine = WrapWidth / estimatedCharWidth;
-		wrappedLineCount += FMath::CeilToInt(lineLength / estimatedCharsPerLine);
-	}
-
-	const int32 estimatedTotalLines = FMath::Max(wrappedLineCount, EditableTextWidget->GetTextLineCount());
-
-	FString lineNumbers;
-	for (int32 i = 1; i <= estimatedTotalLines; i++)
-	{
-		lineNumbers += FString::Printf(TEXT("%d\n"), i);
-	}
-
-	return FText::FromString(lineNumbers);
-}
-
 FSlateFontInfo SMounteaMarkdownEditor::GetEditorFont() const
 {
 	auto editorSettings = GetMutableDefault<UMounteaDocumentationSystemEditorSettings>();
@@ -127,15 +92,50 @@ FSlateColor SMounteaMarkdownEditor::GetLineNumberColor() const
 	return FLinearColor(1.f, 1.f, 1.f ,0.4f);
 }
 
-FReply SMounteaMarkdownEditor::HandleTabPress(const FGeometry& MyGeometry, const FKeyEvent& KeyEvent)
+int32 SMounteaMarkdownEditor::CalculateManualWrappedLineCount() const
 {
-	if (KeyEvent.GetKey() == EKeys::Tab)
+	if (!EditedPage.IsValid() || !EditableTextWidget.IsValid()) return 0;
+	
+	FString FullText = EditedPage->PageContent.ToString();
+	float WrapWidth = EditableTextWidget->GetCachedGeometry().GetLocalSize().X - 40.f;
+	if (WrapWidth <= 0.f) WrapWidth = 800.f;
+	
+	auto FontMeasure = FSlateApplication::Get().GetRenderer()->GetFontMeasureService();
+	const FSlateFontInfo FontInfo = GetEditorFont();
+	TArray<FString> HardLines;
+	FullText.ParseIntoArray(HardLines, TEXT("\n"), false);
+	int32 TotalWrappedLines = 0;
+	for (const FString& HardLine : HardLines)
 	{
-		if (EditableTextWidget.IsValid())
-			EditableTextWidget->InsertTextAtCursor(TEXT("\t"));
-
-		return FReply::Handled();
+		TArray<FString> Words;
+		HardLine.ParseIntoArray(Words, TEXT(" "), true);
+		FString CurrentSoftLine;
+		for (int32 iWord = 0; iWord < Words.Num(); ++iWord)
+		{
+			FString NextAttempt = CurrentSoftLine.IsEmpty() ? Words[iWord] : (CurrentSoftLine + TEXT(" ") + Words[iWord]);
+			float MeasuredWidth = FontMeasure->Measure(NextAttempt, FontInfo).X;
+			if (!CurrentSoftLine.IsEmpty() && MeasuredWidth > WrapWidth)
+			{
+				++TotalWrappedLines;
+				CurrentSoftLine = Words[iWord];
+			}
+			else
+				CurrentSoftLine = NextAttempt;
+		}
+		++TotalWrappedLines;
 	}
-	return FReply::Unhandled();
+	return TotalWrappedLines;
+}
+
+FText SMounteaMarkdownEditor::GetLineNumbers() const
+{
+	if (!EditableTextWidget.IsValid()) return FText::GetEmpty();
+	int32 TotalLines = CalculateManualWrappedLineCount();
+	FString LineNumbers;
+	for (int32 i = 1; i <= TotalLines; i++)
+	{
+		LineNumbers += FString::Printf(TEXT("%d\n"), i);
+	}
+	return FText::FromString(LineNumbers);
 }
 

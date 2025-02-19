@@ -22,7 +22,6 @@ void SMounteaMarkdownTextEditor::Construct(const FArguments& InArgs)
 			}
 		})
 		.Font(InArgs._EditorFont)
-		.AutoWrapText(true)
 		.OnKeyDownHandler(this, &SMounteaMarkdownTextEditor::HandleTabPress)
 		.Marshaller(MarkdownMarshaller)
 	);
