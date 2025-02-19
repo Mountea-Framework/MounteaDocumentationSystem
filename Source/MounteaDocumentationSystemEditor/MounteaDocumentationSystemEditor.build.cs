@@ -25,6 +25,8 @@ public class MounteaDocumentationSystemEditor : ModuleRules
 				"EditorStyle",
 				"InputCore",
 				
+				"DeveloperSettings",
+				
 				"MounteaDocumentationSystem"
 			});
 	}

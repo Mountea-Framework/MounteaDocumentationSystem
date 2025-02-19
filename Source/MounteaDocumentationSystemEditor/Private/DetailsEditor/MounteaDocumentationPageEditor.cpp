@@ -7,6 +7,8 @@
 #include "Widgets/Text/STextBlock.h"
 #include "EditorStyleSet.h"
 #include "Core/MounteaDocumentationPage.h"
+#include "Settings/MounteaDocumentationSystemEditorSettings.h"
+#include "Slate/MounteaMarkdownEditor.h"
 #include "Widgets/Text/SMultiLineEditableText.h"
 
 #define LOCTEXT_NAMESPACE "MounteaDocumentationEditor"
@@ -58,8 +60,7 @@ void FMounteaDocumentationPageEditor::InitMounteaDocumentationEditor(const ETool
 			)
 		)
 	);
-
-
+	
 	const bool bCreateDefaultStandaloneMenu = true;
 	const bool bCreateDefaultToolbar = true;
 	FAssetEditorToolkit::InitAssetEditor
@@ -102,19 +103,15 @@ void FMounteaDocumentationPageEditor::UnregisterTabSpawners(const TSharedRef<cla
 
 TSharedRef<SDockTab> FMounteaDocumentationPageEditor::SpawnMarkdownTab(const FSpawnTabArgs& Args)
 {
-	SpawnEditorTextWidget();
-
 	return SNew(SDockTab)
 		.TabRole(ETabRole::PanelTab)
 		[
 			SNew(SOverlay)
 
-			// Background Layer
 			+ SOverlay::Slot()
 			[
 				SNew(SHorizontalBox)
 
-				// Editor Background
 				+ SHorizontalBox::Slot()
 				.FillWidth(0.5f)
 				[
@@ -123,7 +120,6 @@ TSharedRef<SDockTab> FMounteaDocumentationPageEditor::SpawnMarkdownTab(const FSp
 					.BorderImage(FAppStyle::GetBrush("Brushes.Panel"))
 				]
 
-				// Preview Background
 				+ SHorizontalBox::Slot()
 				.FillWidth(0.5f)
 				[
@@ -133,7 +129,6 @@ TSharedRef<SDockTab> FMounteaDocumentationPageEditor::SpawnMarkdownTab(const FSp
 				]
 			]
 
-			// Foreground Layer (Scrollable Content)
 			+ SOverlay::Slot()
 			[
 				SNew(SScrollBox)
@@ -143,7 +138,6 @@ TSharedRef<SDockTab> FMounteaDocumentationPageEditor::SpawnMarkdownTab(const FSp
 				[
 					SNew(SHorizontalBox)
 
-					// Markdown Editor (With Line Numbers)
 					+ SHorizontalBox::Slot()
 					.FillWidth(0.5f)
 					[
@@ -151,38 +145,11 @@ TSharedRef<SDockTab> FMounteaDocumentationPageEditor::SpawnMarkdownTab(const FSp
 						.Padding(10)
 						.BorderBackgroundColor(FLinearColor::Transparent)
 						[
-							SNew(SHorizontalBox)
-
-							// Line Numbers Column
-							+ SHorizontalBox::Slot()
-							.AutoWidth()
-							[
-								SNew(SBorder)
-								.Padding(10)
-								.BorderBackgroundColor(FLinearColor::Transparent)
-								[
-									SNew(STextBlock)
-									.Text_Lambda([this]() -> FText { return GenerateLineNumbers(); })
-									.Justification(ETextJustify::Right)
-									.ColorAndOpacity(FSlateColor(FLinearColor(1.f, 1.f, 1.f, 0.3f)))
-								]
-							]
-
-							// Markdown Input (Editor)
-							+ SHorizontalBox::Slot()
-							.FillWidth(1.0f)
-							[
-								SNew(SBorder)
-								.Padding(10)
-								.BorderBackgroundColor(FLinearColor::Transparent)
-								[
-									EditableTextWidget.ToSharedRef()
-								]
-							]
+							SNew(SMounteaMarkdownEditor)
+							.EditedPage(EditedPage)
 						]
 					]
 
-					// Rendered Markdown Preview
 					+ SHorizontalBox::Slot()
 					.FillWidth(0.5f)
 					[
@@ -200,69 +167,10 @@ TSharedRef<SDockTab> FMounteaDocumentationPageEditor::SpawnMarkdownTab(const FSp
 		];
 }
 
-FText FMounteaDocumentationPageEditor::GenerateLineNumbers() const
+FSlateFontInfo FMounteaDocumentationPageEditor::GetEditorFont() const
 {
-	if (!IsValid(EditedPage) || !EditableTextWidget.IsValid())
-		return FText::GetEmpty();
-
-	const FString markdownText = EditedPage->PageContent.ToString();
-	TArray<FString> Lines;
-	markdownText.ParseIntoArray(Lines, TEXT("\n"), false); // Preserve empty lines
-
-	// Get the actual text wrapping width
-	float WrapWidth = EditableTextWidget->GetCachedGeometry().GetLocalSize().X * 0.975f;
-	if (WrapWidth <= 0) WrapWidth = 800.0f; // Fallback in case geometry isn't valid
-
-	// Estimate wrapped lines dynamically
-	int32 EstimatedWrappedLines = 0;
-	for (const FString& Line : Lines)
-	{
-		int32 LineLength = Line.Len();
-		EstimatedWrappedLines += FMath::CeilToInt(LineLength / (WrapWidth / 10.0f)); // Adjust division factor if needed
-	}
-
-	int32 TotalLines = FMath::Max(Lines.Num(), EstimatedWrappedLines);
-
-	FString lineNumbers;
-	for (int32 i = 1; i <= TotalLines; i++)
-	{
-		lineNumbers += FString::Printf(TEXT("%d\n"), i);
-	}
-
-	return FText::FromString(lineNumbers);
-}
-
-FReply FMounteaDocumentationPageEditor::HandleTabPress(const FGeometry& MyGeometry, const FKeyEvent& KeyEvent)
-{
-	if (KeyEvent.GetKey() == EKeys::Tab) // Detect Tab Key
-	{
-		if (IsValid(EditedPage))
-			EditableTextWidget->InsertTextAtCursor(TEXT("\t"));
-
-		return FReply::Handled(); // Prevents focus loss
-	}
-
-	return FReply::Unhandled();
-}
-
-void FMounteaDocumentationPageEditor::SpawnEditorTextWidget()
-{
-	EditableTextWidget = SNew(SMultiLineEditableText)
-	.Text_Lambda([this]() -> FText { return IsValid(EditedPage) ? EditedPage->PageContent : FText::GetEmpty(); })
-	.OnTextChanged_Lambda([this](const FText& NewText)
-	{
-		if (IsValid(EditedPage))
-		{
-			EditedPage->PageContent = NewText;
-			EditedPage->MarkdownPageContent = FText::FromString(TEXT("[Rendered Markdown]")); // TODO: Process Markdown
-		}
-	})
-	/*.WrapTextAt_Lambda([this]() -> float
-	{
-		return EditableTextWidget.IsValid() ? EditableTextWidget->GetCachedGeometry().GetLocalSize().X * 0.95f : 800.0f;
-	})*/
-	.AutoWrapText(true)
-	.OnKeyDownHandler(this, &FMounteaDocumentationPageEditor::HandleTabPress);
+	auto editorSettings = GetMutableDefault<UMounteaDocumentationSystemEditorSettings>();
+	return editorSettings->GetEditorFont();
 }
 
 TSharedRef<SDockTab> FMounteaDocumentationPageEditor::SpawnDetailsTab(const FSpawnTabArgs& Args)

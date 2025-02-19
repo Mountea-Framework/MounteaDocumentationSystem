@@ -26,10 +26,8 @@ public:
 	virtual void UnregisterTabSpawners(const TSharedRef<class FTabManager>& InTabManager) override;
 
 	void OnFinishedChangingProperties(const FPropertyChangedEvent& PropertyChangedEvent);
-	FText GenerateLineNumbers() const;
-	FReply HandleTabPress(const FGeometry& MyGeometry, const FKeyEvent& KeyEvent);
 
-	void SpawnEditorTextWidget();
+	FSlateFontInfo GetEditorFont() const;
 
 private:
 	TSharedRef<SDockTab> SpawnMarkdownTab(const FSpawnTabArgs& Args);
