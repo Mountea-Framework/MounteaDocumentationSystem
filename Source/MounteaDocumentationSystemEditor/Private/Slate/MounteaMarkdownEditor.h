@@ -5,7 +5,7 @@
 #include "CoreMinimal.h"
 #include "Widgets/SCompoundWidget.h"
 
-class SMultiLineEditableText;
+class SMounteaMarkdownTextEditor;
 
 class SMounteaMarkdownEditor : public SCompoundWidget
 {
@@ -32,6 +32,6 @@ private:
 	FReply HandleTabPress(const FGeometry& MyGeometry, const FKeyEvent& KeyEvent);
 
 	TWeakObjectPtr<UMounteaDocumentationPage> EditedPage;
-	TSharedPtr<SMultiLineEditableText> EditableTextWidget;
+	TSharedPtr<SMounteaMarkdownTextEditor> EditableTextWidget;
 };
 

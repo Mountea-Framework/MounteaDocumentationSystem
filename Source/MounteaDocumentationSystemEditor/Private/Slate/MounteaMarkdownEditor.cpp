@@ -2,6 +2,7 @@
 
 #include "MounteaMarkdownEditor.h"
 
+#include "MounteaMarkdownTextEditor.h"
 #include "Core/MounteaDocumentationPage.h"
 #include "Settings/MounteaDocumentationSystemEditorSettings.h"
 #include "Widgets/Text/SMultiLineEditableText.h"
@@ -13,7 +14,7 @@ void SMounteaMarkdownEditor::Construct(const FArguments& InArgs)
 }
 
 BEGIN_FUNCTION_BUILD_OPTIMIZATION
-
+/*
 void SMounteaMarkdownEditor::UpdateMarkdownEditor()
 {
 	ChildSlot
@@ -43,7 +44,7 @@ void SMounteaMarkdownEditor::UpdateMarkdownEditor()
 			.Padding(10)
 			.BorderBackgroundColor(FLinearColor::Transparent)
 			[
-				SAssignNew(EditableTextWidget, SMultiLineEditableText)
+				SAssignNew(EditableTextWidget, SMounteaMarkdownTextEditor)
 				.Text(this, &SMounteaMarkdownEditor::GetText)
 				.OnTextChanged_Lambda([this](const FText& NewText)
 				{
@@ -56,6 +57,42 @@ void SMounteaMarkdownEditor::UpdateMarkdownEditor()
 				.Font_Lambda([this] { return GetEditorFont(); })
 				.AutoWrapText(true)
 				.OnKeyDownHandler(this, &SMounteaMarkdownEditor::HandleTabPress)
+			]
+		]
+	];
+}*/
+void SMounteaMarkdownEditor::UpdateMarkdownEditor()
+{
+	ChildSlot
+	[
+		SNew(SHorizontalBox)
+		
+		// Line Numbers Column
+		+ SHorizontalBox::Slot()
+		.AutoWidth()
+		[
+			SNew(SBorder)
+			.Padding(10)
+			.BorderBackgroundColor(FLinearColor::Transparent)
+			[
+				SNew(STextBlock)
+				.Text(this, &SMounteaMarkdownEditor::GetLineNumbers)
+				.Justification(ETextJustify::Right)
+				.ColorAndOpacity(this, &SMounteaMarkdownEditor::GetLineNumberColor)
+			]
+		]
+
+		// Markdown Input (Editor)
+		+ SHorizontalBox::Slot()
+		.FillWidth(0.5f)
+		[
+			SNew(SBorder)
+			.Padding(10)
+			.BorderBackgroundColor(FLinearColor::Transparent)
+			[
+				SAssignNew(EditableTextWidget, SMounteaMarkdownTextEditor)
+				.EditedPage(EditedPage)
+				.EditorFont(this, &SMounteaMarkdownEditor::GetEditorFont)
 			]
 		]
 	];
