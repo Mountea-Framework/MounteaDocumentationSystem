@@ -95,47 +95,54 @@ FSlateColor SMounteaMarkdownEditor::GetLineNumberColor() const
 int32 SMounteaMarkdownEditor::CalculateManualWrappedLineCount() const
 {
 	if (!EditedPage.IsValid() || !EditableTextWidget.IsValid()) return 0;
-	
-	FString FullText = EditedPage->PageContent.ToString();
-	float WrapWidth = EditableTextWidget->GetCachedGeometry().GetLocalSize().X - 40.f;
-	if (WrapWidth <= 0.f) WrapWidth = 800.f;
-	
-	auto FontMeasure = FSlateApplication::Get().GetRenderer()->GetFontMeasureService();
-	const FSlateFontInfo FontInfo = GetEditorFont();
-	TArray<FString> HardLines;
-	FullText.ParseIntoArray(HardLines, TEXT("\n"), false);
-	int32 TotalWrappedLines = 0;
-	for (const FString& HardLine : HardLines)
+
+	FString fullText = EditedPage->PageContent.ToString();
+	float wrapWidth = EditableTextWidget->GetCachedGeometry().GetLocalSize().X - 40.f;
+	if (wrapWidth <= 0.f) wrapWidth = 800.f;
+
+	auto fontMeasure = FSlateApplication::Get().GetRenderer()->GetFontMeasureService();
+	FSlateFontInfo fontInfo = GetEditorFont();
+
+	TArray<FString> hardLines;
+	fullText.ParseIntoArray(hardLines, TEXT("\n"), false);
+
+	int32 totalWrappedLines = 0;
+	for (const FString& hardLine : hardLines)
 	{
-		TArray<FString> Words;
-		HardLine.ParseIntoArray(Words, TEXT(" "), true);
-		FString CurrentSoftLine;
-		for (int32 iWord = 0; iWord < Words.Num(); ++iWord)
+		TArray<FString> words;
+		hardLine.ParseIntoArray(words, TEXT(" "), true);
+
+		FString currentSoftLine;
+		for (int32 iWord = 0; iWord < words.Num(); ++iWord)
 		{
-			FString NextAttempt = CurrentSoftLine.IsEmpty() ? Words[iWord] : (CurrentSoftLine + TEXT(" ") + Words[iWord]);
-			float MeasuredWidth = FontMeasure->Measure(NextAttempt, FontInfo).X;
-			if (!CurrentSoftLine.IsEmpty() && MeasuredWidth > WrapWidth)
+			FString prefix = currentSoftLine.IsEmpty() ? TEXT("") : TEXT(" ");
+			FString newLine = currentSoftLine + prefix + words[iWord];
+			float newWidth = fontMeasure->Measure(newLine, fontInfo).X;
+			if (!currentSoftLine.IsEmpty() && newWidth > wrapWidth)
 			{
-				++TotalWrappedLines;
-				CurrentSoftLine = Words[iWord];
+				++totalWrappedLines;
+				currentSoftLine = words[iWord];
 			}
 			else
-				CurrentSoftLine = NextAttempt;
+			{
+				currentSoftLine = newLine;
+			}
 		}
-		++TotalWrappedLines;
+		++totalWrappedLines;
 	}
-	return TotalWrappedLines;
+	return totalWrappedLines - (totalWrappedLines * 0.05f); //ugliest thing I have done in while :)
 }
 
 FText SMounteaMarkdownEditor::GetLineNumbers() const
 {
 	if (!EditableTextWidget.IsValid()) return FText::GetEmpty();
-	int32 TotalLines = CalculateManualWrappedLineCount();
-	FString LineNumbers;
-	for (int32 i = 1; i <= TotalLines; i++)
-	{
-		LineNumbers += FString::Printf(TEXT("%d\n"), i);
-	}
-	return FText::FromString(LineNumbers);
-}
 
+	int32 totalLines = CalculateManualWrappedLineCount();
+	FString lineNumbers;
+	for (int32 i = 1; i <= totalLines; i++)
+	{
+		lineNumbers += FString::Printf(TEXT("%d\n"), i);
+	}
+	return FText::FromString(lineNumbers);
+}
+	
