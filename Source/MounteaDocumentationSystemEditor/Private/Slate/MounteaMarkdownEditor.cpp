@@ -48,6 +48,7 @@ void SMounteaMarkdownEditor::UpdateMarkdownEditor()
 				SAssignNew(EditableTextWidget, SMounteaMarkdownTextEditor)
 				.EditedPage(EditedPage)
 				.EditorFont(this, &SMounteaMarkdownEditor::GetEditorFont)
+				.OnChildTextChanged(this, &SMounteaMarkdownEditor::HandleChildTextChanged)
 			]
 		]
 	];
@@ -145,4 +146,62 @@ FText SMounteaMarkdownEditor::GetLineNumbers() const
 	}
 	return FText::FromString(lineNumbers);
 }
+
+void SMounteaMarkdownEditor::HandleChildTextChanged(const FText& NewText)
+{
+	SetText(NewText);
 	
+	ConvertMarkdownToRichText();
+}
+
+void SMounteaMarkdownEditor::ConvertMarkdownToRichText()
+{
+	if (!EditedPage.IsValid()) return;
+
+	FString text = EditedPage->PageContent.ToString();
+
+	FormatTextWithTags(text, TEXT("_"), TEXT("_"), TEXT("<RichTextBlock.Italic>"), TEXT("</>"));
+	FormatTextWithTags(text, TEXT("**"), TEXT("**"), TEXT("<RichTextBlock.BoldHighlight>"), TEXT("</>"));
+	FormatTextWithTags(text, TEXT("`"), TEXT("`"), TEXT("<RichTextBlock.TextHighlight>"), TEXT("</>"));
+
+	EditedPage->RichTextPageContent = FText::FromString(text);
+}
+
+void SMounteaMarkdownEditor::FormatTextWithTags(
+	FString& source,
+	const FString& startMarker,
+	const FString& endMarker,
+	const FString& startTag,
+	const FString& endTag
+)
+{
+	int32 searchIndex = 0;
+	while (true)
+	{
+		int32 openPos = source.Find(startMarker, ESearchCase::CaseSensitive, ESearchDir::FromStart, searchIndex);
+		if (openPos == INDEX_NONE)
+		{
+			break;
+		}
+
+		int32 closePos = source.Find(endMarker, ESearchCase::CaseSensitive, ESearchDir::FromStart, openPos + startMarker.Len());
+		if (closePos == INDEX_NONE || closePos <= openPos)
+		{
+			break;
+		}
+
+		int32 contentStart = openPos + startMarker.Len();
+		int32 contentLen = closePos - contentStart;
+		if (contentLen <= 0)
+		{
+			break;
+		}
+
+		FString inner = source.Mid(contentStart, contentLen);
+		FString replaced = startTag + inner + endTag;
+		source = source.Left(openPos) + replaced + source.Mid(closePos + endMarker.Len());
+
+		searchIndex = openPos + replaced.Len();
+	}
+}
+

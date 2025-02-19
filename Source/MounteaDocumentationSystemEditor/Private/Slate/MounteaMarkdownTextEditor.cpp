@@ -8,7 +8,7 @@
 void SMounteaMarkdownTextEditor::Construct(const FArguments& InArgs)
 {
 	EditedPage = InArgs._EditedPage;
-
+	OnChildTextChanged = InArgs._OnChildTextChanged;
 	MarkdownMarshaller = MakeShared<FMarkdownTextMarshaller>();
 
 	SMultiLineEditableText::Construct(
@@ -19,11 +19,14 @@ void SMounteaMarkdownTextEditor::Construct(const FArguments& InArgs)
 			if (EditedPage.IsValid())
 			{
 				EditedPage->PageContent = NewText;
+
+				if (OnChildTextChanged.IsBound())
+					OnChildTextChanged.Execute(NewText);
 			}
 		})
 		.Font(InArgs._EditorFont)
 		.OnKeyDownHandler(this, &SMounteaMarkdownTextEditor::HandleTabPress)
-		.Marshaller(MarkdownMarshaller)
+		//.Marshaller(MarkdownMarshaller) // TODO: Disabled input!
 	);
 }
 

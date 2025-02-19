@@ -97,6 +97,8 @@ void FMarkdownTextMarshaller::SetText(const FString& SourceString, FTextLayout& 
 		else
 		{
 			TextStyle.SetColorAndOpacity(FLinearColor::White);
+			Runs.Add(FSlateTextRun::Create(FRunInfo(), LineText, TextStyle));
+			/*
 			TArray<FString> Words;
 			LineText->ParseIntoArray(Words, TEXT(" "), true);
 			
@@ -112,6 +114,7 @@ void FMarkdownTextMarshaller::SetText(const FString& SourceString, FTextLayout& 
 			
 			TSharedRef<FString> ProcessedText = MakeShared<FString>(ProcessedLine);
 			Runs.Add(FSlateTextRun::Create(FRunInfo(), ProcessedText, TextStyle));
+			*/
 		}
 
 		LinesToAdd.Emplace(LineText, MoveTemp(Runs));

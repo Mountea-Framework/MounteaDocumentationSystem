@@ -35,7 +35,7 @@ public:
 	FText PageContent;
 
 	UPROPERTY(BlueprintReadOnly, Category="Context", meta=(MultiLine=true))
-	FText MarkdownPageContent;
+	FText RichTextPageContent;
 };
 
 USTRUCT(BlueprintType)

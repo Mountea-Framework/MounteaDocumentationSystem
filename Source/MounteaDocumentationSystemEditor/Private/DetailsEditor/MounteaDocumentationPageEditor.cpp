@@ -10,6 +10,7 @@
 #include "Settings/MounteaDocumentationSystemEditorSettings.h"
 #include "Slate/MounteaMarkdownEditor.h"
 #include "Widgets/Text/SMultiLineEditableText.h"
+#include "Widgets/Text/SRichTextBlock.h"
 
 #define LOCTEXT_NAMESPACE "MounteaDocumentationEditor"
 
@@ -157,9 +158,9 @@ TSharedRef<SDockTab> FMounteaDocumentationPageEditor::SpawnMarkdownTab(const FSp
 						.Padding(10)
 						.BorderBackgroundColor(FLinearColor::Transparent)
 						[
-							SNew(STextBlock)
+							SNew(SRichTextBlock)
 							.AutoWrapText(true)
-							.Text_Lambda([this]() -> FText { return IsValid(EditedPage) ? EditedPage->MarkdownPageContent : FText::GetEmpty(); })
+							.Text_Lambda([this]() -> FText { return IsValid(EditedPage) ? EditedPage->RichTextPageContent : FText::GetEmpty(); })
 						]
 					]
 				]

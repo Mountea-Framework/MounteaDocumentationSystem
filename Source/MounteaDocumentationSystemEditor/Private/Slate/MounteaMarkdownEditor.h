@@ -33,6 +33,13 @@ public:
 private:
 	TWeakObjectPtr<class UMounteaDocumentationPage> EditedPage;
 	TSharedPtr<SMounteaMarkdownTextEditor> EditableTextWidget;
+
+protected:
+
+	void HandleChildTextChanged(const FText& NewText);
+	
+	void ConvertMarkdownToRichText();
+	static void FormatTextWithTags(FString& source, const FString& startMarker, const FString& endMarker, const FString& startTag, const FString& endTag);
 };
 
 
