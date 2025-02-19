@@ -5,7 +5,6 @@
 #include "MounteaMarkdownTextEditor.h"
 #include "Core/MounteaDocumentationPage.h"
 #include "Settings/MounteaDocumentationSystemEditorSettings.h"
-#include "Widgets/Text/SMultiLineEditableText.h"
 
 void SMounteaMarkdownEditor::Construct(const FArguments& InArgs)
 {
@@ -14,53 +13,7 @@ void SMounteaMarkdownEditor::Construct(const FArguments& InArgs)
 }
 
 BEGIN_FUNCTION_BUILD_OPTIMIZATION
-/*
-void SMounteaMarkdownEditor::UpdateMarkdownEditor()
-{
-	ChildSlot
-	[
-		SNew(SHorizontalBox)
 
-		// Line Numbers Column
-		+ SHorizontalBox::Slot()
-		.AutoWidth()
-		[
-			SNew(SBorder)
-			.Padding(10)
-			.BorderBackgroundColor(FLinearColor::Transparent)
-			[
-				SNew(STextBlock)
-				.Text(this, &SMounteaMarkdownEditor::GetLineNumbers)
-				.Justification(ETextJustify::Right)
-				.ColorAndOpacity(this, &SMounteaMarkdownEditor::GetLineNumberColor)
-			]
-		]
-
-		// Markdown Input (Editor)
-		+ SHorizontalBox::Slot()
-		.FillWidth(1.0f)
-		[
-			SNew(SBorder)
-			.Padding(10)
-			.BorderBackgroundColor(FLinearColor::Transparent)
-			[
-				SAssignNew(EditableTextWidget, SMounteaMarkdownTextEditor)
-				.Text(this, &SMounteaMarkdownEditor::GetText)
-				.OnTextChanged_Lambda([this](const FText& NewText)
-				{
-					if (EditedPage.IsValid())
-					{
-						EditedPage->PageContent = NewText;
-						EditedPage->MarkdownPageContent = FText::FromString(TEXT("[Rendered Markdown]"));
-					}
-				})
-				.Font_Lambda([this] { return GetEditorFont(); })
-				.AutoWrapText(true)
-				.OnKeyDownHandler(this, &SMounteaMarkdownEditor::HandleTabPress)
-			]
-		]
-	];
-}*/
 void SMounteaMarkdownEditor::UpdateMarkdownEditor()
 {
 	ChildSlot
@@ -105,8 +58,11 @@ void SMounteaMarkdownEditor::Tick(const FGeometry& AllottedGeometry, const doubl
 {
 	SCompoundWidget::Tick(AllottedGeometry, InCurrentTime, InDeltaTime);
 
-	EditableTextWidget->SetFont(GetEditorFont());
-	Invalidate(EInvalidateWidget::LayoutAndVolatility);
+	if (EditableTextWidget.IsValid())
+	{
+		EditableTextWidget->UpdateEditorFont(GetEditorFont());
+		Invalidate(EInvalidateWidget::LayoutAndVolatility);
+	}	
 }
 
 FText SMounteaMarkdownEditor::GetText() const

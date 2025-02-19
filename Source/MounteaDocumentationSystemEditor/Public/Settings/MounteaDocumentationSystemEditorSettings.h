@@ -35,7 +35,7 @@ public:
 
 public:
 
-	FSlateFontInfo GetEditorFont();
+	FSlateFontInfo GetEditorFont() const;
 	
 public:
 

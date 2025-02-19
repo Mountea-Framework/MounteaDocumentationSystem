@@ -3,10 +3,13 @@
 
 #include "MounteaMarkdownTextEditor.h"
 #include "Core/MounteaDocumentationPage.h"
+#include "Text/MounteaMarkdownTextMarshaller.h"
 
 void SMounteaMarkdownTextEditor::Construct(const FArguments& InArgs)
 {
 	EditedPage = InArgs._EditedPage;
+
+	MarkdownMarshaller = MakeShared<FMarkdownTextMarshaller>();
 
 	SMultiLineEditableText::Construct(
 		SMultiLineEditableText::FArguments()
@@ -21,7 +24,13 @@ void SMounteaMarkdownTextEditor::Construct(const FArguments& InArgs)
 		.Font(InArgs._EditorFont)
 		.AutoWrapText(true)
 		.OnKeyDownHandler(this, &SMounteaMarkdownTextEditor::HandleTabPress)
+		.Marshaller(MarkdownMarshaller)
 	);
+}
+
+void SMounteaMarkdownTextEditor::UpdateEditorFont(const FSlateFontInfo& NewFont)
+{
+	SetFont(NewFont);
 }
 
 FReply SMounteaMarkdownTextEditor::HandleTabPress(const FGeometry& MyGeometry, const FKeyEvent& KeyEvent)
@@ -33,5 +42,3 @@ FReply SMounteaMarkdownTextEditor::HandleTabPress(const FGeometry& MyGeometry, c
 	}
 	return FReply::Unhandled();
 }
-
-

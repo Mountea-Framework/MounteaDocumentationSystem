@@ -11,7 +11,7 @@ UMounteaDocumentationSystemEditorSettings::UMounteaDocumentationSystemEditorSett
 	SectionName = TEXT("Mountea Documentation System (Editor)");
 }
 
-FSlateFontInfo UMounteaDocumentationSystemEditorSettings::GetEditorFont()
+FSlateFontInfo UMounteaDocumentationSystemEditorSettings::GetEditorFont() const
 {
 	if (!EditorFont.FontObject)
 		return  FCoreStyle::GetDefaultFontStyle("Mono", 12);
