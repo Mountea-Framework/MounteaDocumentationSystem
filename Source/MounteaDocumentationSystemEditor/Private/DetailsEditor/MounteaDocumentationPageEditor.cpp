@@ -107,8 +107,10 @@ void FMounteaDocumentationPageEditor::UnregisterTabSpawners(const TSharedRef<cla
 TSharedRef<SDockTab> FMounteaDocumentationPageEditor::SpawnMarkdownTab(const FSpawnTabArgs& Args)
 {
 	TArray<TSharedRef<ITextDecorator>> Decorators;
+	Decorators.Add(MakeShared<UMounteaBoldDecorator>());
 	Decorators.Add(MakeShared<UMounteaItalicDecorator>());
 	Decorators.Add(MakeShared<UMounteaCodeDecorator>());
+	Decorators.Add(MakeShared<UMounteaCodeBlockDecorator>());	
 	
 	return SNew(SDockTab)
 		.TabRole(ETabRole::PanelTab)
@@ -161,12 +163,13 @@ TSharedRef<SDockTab> FMounteaDocumentationPageEditor::SpawnMarkdownTab(const FSp
 					.FillWidth(0.5f)
 					[
 						SNew(SBorder)
-						.Padding(10)
+						.Padding(25)
 						.BorderBackgroundColor(FLinearColor::Transparent)
 						[
 							SAssignNew(PreviewWindow, SRichTextBlock)
 							.AutoWrapText(true)
 							.Text_Lambda([this]() -> FText { return IsValid(EditedPage) ? EditedPage->RichTextPageContent : FText::GetEmpty(); })
+							.TextStyle(&FMounteaDocumentationStyle::Get(), "RichTextBlock.Mountea.Regular")
 							.Decorators( Decorators )
 							.DecoratorStyleSet(&FMounteaDocumentationStyle::Get())
 						]

@@ -56,9 +56,10 @@ class MOUNTEADOCUMENTATIONSYSTEM_API UMounteaCodeDecorator : public FMounteaRich
 
 public:
 	virtual TSharedRef<ISlateRun> Create(const TSharedRef<class FTextLayout>& TextLayout, const FTextRunParseResults& RunParseResult, const FString& OriginalText, const TSharedRef< FString >& InOutModelText, const ISlateStyle* Style) override;
-	virtual bool Supports(const FTextRunParseResults& RunParseResult, const FString& Text) const override;
-protected:
-	FTextBlockStyle CodeStyle;
+	virtual bool Supports(const FTextRunParseResults& RunParseResult, const FString& Text) const override
+	{
+		return RunParseResult.Name == TEXT("RichTextBlock.Mountea.Code");
+	}
 };
 
 /**
@@ -70,9 +71,10 @@ class MOUNTEADOCUMENTATIONSYSTEM_API UMounteaCodeBlockDecorator : public UMounte
 
 public:
 	virtual TSharedRef<ISlateRun> Create(const TSharedRef<class FTextLayout>& TextLayout, const FTextRunParseResults& RunParseResult, const FString& OriginalText, const TSharedRef< FString >& InOutModelText, const ISlateStyle* Style) override;
-	virtual bool Supports(const FTextRunParseResults& RunParseResult, const FString& Text) const override;
-protected:
-	FTextBlockStyle CodeBlockStyle;
+	virtual bool Supports(const FTextRunParseResults& RunParseResult, const FString& Text) const override
+	{
+		return RunParseResult.Name == TEXT("RichTextBlock.Mountea.CodeBlock");
+	}
 };
 
 /**
@@ -87,10 +89,17 @@ public:
 	{
 		return RunParseResult.Name == TEXT("RichTextBlock.Mountea.Italic");
 	}
-protected:
-	FTextBlockStyle ItalicStyle;
 };
 
+class MOUNTEADOCUMENTATIONSYSTEM_API UMounteaBoldDecorator : public FMounteaRichTextDecorator
+{
+public:
+	virtual TSharedRef<ISlateRun> Create(const TSharedRef<class FTextLayout>& TextLayout, const FTextRunParseResults& RunParseResult, const FString& OriginalText, const TSharedRef< FString >& InOutModelText, const ISlateStyle* Style) override;
+	virtual bool Supports(const FTextRunParseResults& RunParseResult, const FString& Text) const override
+	{
+		return RunParseResult.Name == TEXT("RichTextBlock.Mountea.Bold");
+	}
+};
 namespace MounteaTextTags
 {
 	static constexpr TCHAR ItalicMarker = TEXT('*');

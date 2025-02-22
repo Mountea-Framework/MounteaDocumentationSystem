@@ -50,54 +50,52 @@ bool FMounteaLinkDecorator::Supports(const FTextRunParseResults& RunParseResult,
 }
 */
 
-bool UMounteaCodeDecorator::Supports(const FTextRunParseResults& RunParseResult, const FString& Text) const
-{
-	if (RunParseResult.Name != TEXT("text")) return false;
-    
-	const int32 ContentLen = RunParseResult.ContentRange.EndIndex - RunParseResult.ContentRange.BeginIndex;
-	if (ContentLen <= 0) return false;
-    
-	return Text[RunParseResult.ContentRange.BeginIndex] == MounteaTextTags::CodeMarker
-		&& Text[RunParseResult.ContentRange.EndIndex - 1] == MounteaTextTags::CodeMarker;
-}
-
 TSharedRef<ISlateRun> UMounteaCodeDecorator::Create(const TSharedRef<FTextLayout>& TextLayout, const FTextRunParseResults& RunParseResult, const FString& OriginalText, const TSharedRef<FString>& InOutModelText, const ISlateStyle* Style)
 {
 	FTextRange ModelRange;
 	ModelRange.BeginIndex = InOutModelText->Len();
-    
-	// Extract content without markers
-	const FString Content = OriginalText.Mid(RunParseResult.ContentRange.BeginIndex + 1, 
-		RunParseResult.ContentRange.EndIndex - RunParseResult.ContentRange.BeginIndex - 2);
-	*InOutModelText += Content;
+	*InOutModelText += OriginalText.Mid(RunParseResult.ContentRange.BeginIndex,
+		RunParseResult.ContentRange.EndIndex - RunParseResult.ContentRange.BeginIndex);
 	ModelRange.EndIndex = InOutModelText->Len();
 
-	// Use monospace font
-	FTextBlockStyle CodeTextStyle = Style->GetWidgetStyle<FTextBlockStyle>("NormalText");
-	CodeTextStyle.SetFont(FCoreStyle::GetDefaultFontStyle("UbuntuMono", 15));
+	// Use registered style or fallback to Code font
+	if(Style->HasWidgetStyle<FTextBlockStyle>(TEXT("RichTextBlock.Mountea.Code")))
+	{
+		return FSlateTextRun::Create(FRunInfo(), InOutModelText, 
+			Style->GetWidgetStyle<FTextBlockStyle>(TEXT("RichTextBlock.Mountea.Code")), 
+			ModelRange);
+	}
 
-	return FSlateTextRun::Create(FRunInfo(), InOutModelText, CodeTextStyle, ModelRange);
+	auto displaySettings = GetMutableDefault<UMounteaDocumentationSystemSettings>();
+	auto newConfig = displaySettings->FontMappings.Find(TEXT("Code"));
+	
+	FTextBlockStyle mounteaItalicStyle = Style->GetWidgetStyle<FTextBlockStyle>("NormalText");
+	mounteaItalicStyle.SetFont(newConfig->PreviewFont);
+	return FSlateTextRun::Create(FRunInfo(), InOutModelText, mounteaItalicStyle, ModelRange);
 }
 
 TSharedRef<ISlateRun> UMounteaCodeBlockDecorator::Create(const TSharedRef<FTextLayout>& TextLayout, const FTextRunParseResults& RunParseResult, const FString& OriginalText, const TSharedRef<FString>& InOutModelText, const ISlateStyle* Style)
 {
 	FTextRange ModelRange;
 	ModelRange.BeginIndex = InOutModelText->Len();
-	*InOutModelText += OriginalText.Mid(RunParseResult.ContentRange.BeginIndex, RunParseResult.ContentRange.EndIndex - RunParseResult.ContentRange.BeginIndex);
+	*InOutModelText += OriginalText.Mid(RunParseResult.ContentRange.BeginIndex,
+		RunParseResult.ContentRange.EndIndex - RunParseResult.ContentRange.BeginIndex);
 	ModelRange.EndIndex = InOutModelText->Len();
 
-	FRunInfo RunInfo(RunParseResult.Name);
-	for (const TPair<FString, FTextRange>& Pair : RunParseResult.MetaData)
+	// Use registered style or fallback to Code font
+	if(Style->HasWidgetStyle<FTextBlockStyle>(TEXT("RichTextBlock.Mountea.CodeBlock")))
 	{
-		RunInfo.MetaData.Add(Pair.Key, OriginalText.Mid(Pair.Value.BeginIndex, Pair.Value.EndIndex - Pair.Value.BeginIndex));
+		return FSlateTextRun::Create(FRunInfo(), InOutModelText, 
+			Style->GetWidgetStyle<FTextBlockStyle>(TEXT("RichTextBlock.Mountea.CodeBlock")), 
+			ModelRange);
 	}
 
-	return FSlateTextRun::Create(RunInfo, InOutModelText, CodeBlockStyle, ModelRange);
-}
-
-bool UMounteaCodeBlockDecorator::Supports(const FTextRunParseResults& RunParseResult, const FString& Text) const
-{
-	return RunParseResult.Name == TEXT("pre");
+	auto displaySettings = GetMutableDefault<UMounteaDocumentationSystemSettings>();
+	auto newConfig = displaySettings->FontMappings.Find(TEXT("Code"));
+	
+	FTextBlockStyle mounteaItalicStyle = Style->GetWidgetStyle<FTextBlockStyle>("NormalText");
+	mounteaItalicStyle.SetFont(newConfig->PreviewFont);
+	return FSlateTextRun::Create(FRunInfo(), InOutModelText, mounteaItalicStyle, ModelRange);
 }
 
 TSharedRef<ISlateRun> UMounteaItalicDecorator::Create(const TSharedRef<FTextLayout>& TextLayout, const FTextRunParseResults& RunParseResult, const FString& OriginalText, const TSharedRef<FString>& InOutModelText, const ISlateStyle* Style)
@@ -119,7 +117,32 @@ TSharedRef<ISlateRun> UMounteaItalicDecorator::Create(const TSharedRef<FTextLayo
 	auto displaySettings = GetMutableDefault<UMounteaDocumentationSystemSettings>();
 	auto newConfig = displaySettings->FontMappings.Find(TEXT("Italic"));
 	
+	FTextBlockStyle mounteaItalicStyle = Style->GetWidgetStyle<FTextBlockStyle>("NormalText");
+	mounteaItalicStyle.SetFont(newConfig->PreviewFont);
+	return FSlateTextRun::Create(FRunInfo(), InOutModelText, mounteaItalicStyle, ModelRange);
+}
 
+TSharedRef<ISlateRun> UMounteaBoldDecorator::Create(const TSharedRef<class FTextLayout>& TextLayout,
+	const FTextRunParseResults& RunParseResult, const FString& OriginalText, const TSharedRef<FString>& InOutModelText,
+	const ISlateStyle* Style)
+{
+	FTextRange ModelRange;
+	ModelRange.BeginIndex = InOutModelText->Len();
+	*InOutModelText += OriginalText.Mid(RunParseResult.ContentRange.BeginIndex,
+		RunParseResult.ContentRange.EndIndex - RunParseResult.ContentRange.BeginIndex);
+	ModelRange.EndIndex = InOutModelText->Len();
+
+	// Use registered style or fallback to italic Bold
+	if(Style->HasWidgetStyle<FTextBlockStyle>(TEXT("RichTextBlock.Mountea.Bold")))
+	{
+		return FSlateTextRun::Create(FRunInfo(), InOutModelText, 
+			Style->GetWidgetStyle<FTextBlockStyle>(TEXT("RichTextBlock.Mountea.Bold")), 
+			ModelRange);
+	}
+
+	auto displaySettings = GetMutableDefault<UMounteaDocumentationSystemSettings>();
+	auto newConfig = displaySettings->FontMappings.Find(TEXT("Bold"));
+	
 	FTextBlockStyle mounteaItalicStyle = Style->GetWidgetStyle<FTextBlockStyle>("NormalText");
 	mounteaItalicStyle.SetFont(newConfig->PreviewFont);
 	return FSlateTextRun::Create(FRunInfo(), InOutModelText, mounteaItalicStyle, ModelRange);

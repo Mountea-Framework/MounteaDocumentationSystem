@@ -59,25 +59,68 @@ const FVector2D Icon16x16(16.0f, 16.0f);
 const FVector2D Icon20x20(20.0f, 20.0f);
 const FVector2D Icon40x40(40.0f, 40.0f);
 
-TSharedRef<class FSlateStyleSet> FMounteaDocumentationStyle::Create()
+TSharedRef<FSlateStyleSet> FMounteaDocumentationStyle::Create()
 {
-	TSharedRef< FSlateStyleSet > Style = MakeShareable(new FSlateStyleSet("MounteaDocumentationStyle"));
+	TSharedRef<FSlateStyleSet> Style = MakeShareable(new FSlateStyleSet("MounteaDocumentationStyle"));
 	Style->SetContentRoot(IPluginManager::Get().FindPlugin("MounteaDocumentationSystem")->GetBaseDir() / TEXT("Resources"));
 
 	UMounteaDocumentationSystemSettings* Settings = GetMutableDefault<UMounteaDocumentationSystemSettings>();
-	Settings->RefreshPreviewFonts();
-	for (const auto& FontPair : Settings->FontMappings)
+	if (!ensure(Settings))
+	{
+		return Style;
+	}
+
+	const FSlateFontInfo DefaultFont      = FCoreStyle::GetDefaultFontStyle(TEXT("Regular"), 15);
+	const FSlateFontInfo DefaultMonoFont  = FCoreStyle::GetDefaultFontStyle(TEXT("Regular"), 15);
+	
+	for (const FName& TextStyleName : Settings->TextTypes)
 	{
 		FTextBlockStyle TextStyle;
-		TextStyle.SetFont(FontPair.Value.PreviewFont);
 		TextStyle.ColorAndOpacity = Settings->FontColor;
-       
-		const FString StyleName = FString::Printf(TEXT("RichTextBlock.Mountea.%s"), *FontPair.Key.ToString());
+
+		if (TextStyleName.IsEqual("Bold"))
+		{
+			// Example: Bold text
+			TextStyle.SetFont(FCoreStyle::GetDefaultFontStyle(TEXT("Bold"), 15));
+		}
+		else if (TextStyleName.IsEqual("Italic"))
+		{
+			TextStyle.SetFont(FCoreStyle::GetDefaultFontStyle(TEXT("Italic"), 15));
+		}
+		else if (TextStyleName.IsEqual("Code") || TextStyleName.IsEqual("CodeBlock"))
+		{
+			TextStyle.SetFont(DefaultMonoFont);
+		}
+		else if (TextStyleName.IsEqual("Header 1"))
+		{
+			TextStyle.SetFont(FCoreStyle::GetDefaultFontStyle(TEXT("Bold"), 32));
+		}
+		else if (TextStyleName.IsEqual("Header 2"))
+		{
+			TextStyle.SetFont(FCoreStyle::GetDefaultFontStyle(TEXT("Bold"), 28));
+		}
+		else if (TextStyleName.IsEqual("Header 3"))
+		{
+			TextStyle.SetFont(FCoreStyle::GetDefaultFontStyle(TEXT("Regular"), 24));
+		}
+		else if (TextStyleName.IsEqual("Header 4"))
+		{
+			TextStyle.SetFont(FCoreStyle::GetDefaultFontStyle(TEXT("Regular"), 20));
+		}
+		else
+		{
+			// Catch-all fallback for anything else (Regular, Link, etc.)
+			TextStyle.SetFont(DefaultFont);
+		}
+
+		// Register in the style set as "RichTextBlock.Mountea.<StyleName>"
+		const FString StyleName = FString::Printf(TEXT("RichTextBlock.Mountea.%s"), *TextStyleName.ToString());
 		Style->Set(*StyleName, TextStyle);
 	}
-	
+
 	return Style;
 }
+
 
 #undef IMAGE_BRUSH
 #undef BOX_BRUSH

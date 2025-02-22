@@ -34,7 +34,7 @@ public:
 	UPROPERTY(BlueprintReadOnly, Category="Context", meta=(MultiLine=true))
 	FText PageContent;
 
-	UPROPERTY(BlueprintReadOnly, Category="Context", meta=(MultiLine=true))
+	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category="Context", meta=(MultiLine=true))
 	FText RichTextPageContent;
 };
 

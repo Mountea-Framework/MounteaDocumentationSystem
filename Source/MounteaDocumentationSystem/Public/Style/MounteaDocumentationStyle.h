@@ -23,7 +23,7 @@ public:
 	static const ISlateStyle& Get();
 
 	static FName GetStyleSetName();
-	
+
 	static void ReloadStyles();
 
 private:
