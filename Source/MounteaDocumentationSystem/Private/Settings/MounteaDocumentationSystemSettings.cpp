@@ -22,6 +22,7 @@ void UMounteaDocumentationSystemSettings::SetDefaultTextTypes()
 		returnValue.Add(TEXT("Header 3"));
 		returnValue.Add(TEXT("Header 4"));
 		returnValue.Add(TEXT("Code"));
+		returnValue.Add(TEXT("CodeBlock"));
 		returnValue.Add(TEXT("Regular"));
 		returnValue.Add(TEXT("Bold"));
 		returnValue.Add(TEXT("Italic"));
