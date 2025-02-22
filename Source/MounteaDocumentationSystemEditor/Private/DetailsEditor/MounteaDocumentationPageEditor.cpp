@@ -134,7 +134,7 @@ TSharedRef<SDockTab> FMounteaDocumentationPageEditor::SpawnMarkdownTab(const FSp
 				[
 					SNew(SBorder)
 					.Padding(0)
-					.BorderImage(FAppStyle::GetBrush("Brushes.Background"))
+					.BorderImage(FMounteaDocumentationStyle::GetBrush("Mountea.MarkdownPreview"))
 				]
 			]
 
@@ -172,39 +172,11 @@ TSharedRef<SDockTab> FMounteaDocumentationPageEditor::SpawnMarkdownTab(const FSp
 							.TextStyle(&FMounteaDocumentationStyle::Get(), "RichTextBlock.Mountea.Regular")
 							.Decorators( Decorators )
 							.DecoratorStyleSet(&FMounteaDocumentationStyle::Get())
-							.HighlightText_Lambda([this]() -> FText
-							{
-								return IsValid(EditedPage) ? GetText("RichTextBlock.Mountea.Code") : FText::GetEmpty();
-							})
 						]
 					]
 				]
 			]
 		];
-}
-
-FText FMounteaDocumentationPageEditor::GetText(const FString& StyleName) const
-{
-	if (!IsValid(EditedPage)) return FText::GetEmpty();
-	
-	FString Content = EditedPage->RichTextPageContent.ToString();
-	FString StartTag = FString::Printf(TEXT("<%s>"), *StyleName);
-	FString EndTag = TEXT("</>");
-    
-	// Find all text between style tags
-	FString Result;
-	int32 StartIndex = Content.Find(StartTag);
-	while (StartIndex != INDEX_NONE)
-	{
-		int32 EndIndex = Content.Find(EndTag, ESearchCase::CaseSensitive, ESearchDir::FromStart, StartIndex);
-		if (EndIndex != INDEX_NONE)
-		{
-			StartIndex += StartTag.Len();
-			Result += Content.Mid(StartIndex, EndIndex - StartIndex) + TEXT(" ");
-		}
-		StartIndex = Content.Find(StartTag, ESearchCase::CaseSensitive, ESearchDir::FromStart, EndIndex);
-	}
-	return FText::FromString(Result);
 }
 
 TSharedRef<SDockTab> FMounteaDocumentationPageEditor::SpawnDetailsTab(const FSpawnTabArgs& Args)

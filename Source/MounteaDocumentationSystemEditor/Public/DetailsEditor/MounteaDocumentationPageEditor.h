@@ -27,8 +27,6 @@ public:
 
 	void OnFinishedChangingProperties(const FPropertyChangedEvent& PropertyChangedEvent);
 
-	FText GetText(const FString& StyleName) const;
-
 private:
 	TSharedRef<SDockTab> SpawnMarkdownTab(const FSpawnTabArgs& Args);
 	

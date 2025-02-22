@@ -52,7 +52,7 @@ public:
 	FSlateFontInfo EditorFont;
 
 	UPROPERTY(config, EditDefaultsOnly, Category="Font", meta=(UIMin=1.f,ClampMin=1.f))
-	float EstimatedCharWidth = 14.f;
+	int EstimatedWordPerLine = 85;
 
 private:
 

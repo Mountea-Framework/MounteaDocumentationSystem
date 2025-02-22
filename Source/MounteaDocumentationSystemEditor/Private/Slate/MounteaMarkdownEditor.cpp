@@ -8,10 +8,13 @@
 #include "Settings/MounteaDocumentationSystemEditorSettings.h"
 #include "Statics/MounteaDocumentationSystemStatics.h"
 
+const UMounteaDocumentationSystemEditorSettings* editorSettings = nullptr;
+
 void SMounteaMarkdownEditor::Construct(const FArguments& InArgs)
 {
 	EditedPage = InArgs._EditedPage;
 	UpdateMarkdownEditor();
+	editorSettings = GetDefault<UMounteaDocumentationSystemEditorSettings>();
 }
 
 BEGIN_FUNCTION_BUILD_OPTIMIZATION
@@ -85,55 +88,53 @@ void SMounteaMarkdownEditor::SetText(const FText& NewText)
 
 FSlateFontInfo SMounteaMarkdownEditor::GetEditorFont() const
 {
-	auto editorSettings = GetMutableDefault<UMounteaDocumentationSystemEditorSettings>();
+	if (!IsValid(editorSettings))
+		editorSettings = GetMutableDefault<UMounteaDocumentationSystemEditorSettings>();
 	return editorSettings->GetEditorFont();
 }
 
 FSlateColor SMounteaMarkdownEditor::GetLineNumberColor() const
 {
-	return FLinearColor(1.f, 1.f, 1.f ,0.4f);
+	return FLinearColor(1.f, 1.f, 1.f ,0.2f);
 }
 
 int32 SMounteaMarkdownEditor::CalculateManualWrappedLineCount() const
 {
-	if (!EditedPage.IsValid() || !EditableTextWidget.IsValid()) return 0;
+	if (!EditedPage.IsValid() || !EditableTextWidget.IsValid())
+		return 0;
 
-	FString fullText = EditedPage->PageContent.ToString();
-	float wrapWidth = EditableTextWidget->GetCachedGeometry().GetLocalSize().X - 40.f;
-	if (wrapWidth <= 0.f) wrapWidth = 800.f;
+	float CurrentWidth = EditableTextWidget->GetCachedGeometry().GetLocalSize().X;
+	if (CurrentWidth <= 0.f)
+		CurrentWidth = 996.f;
 
-	auto fontMeasure = FSlateApplication::Get().GetRenderer()->GetFontMeasureService();
-	FSlateFontInfo fontInfo = GetEditorFont();
+	const float BaselineWidth = 996.f;
+	const float Ratio = CurrentWidth / BaselineWidth;
+	const int32 ScaledCharactersPerLine = FMath::Max(1, FMath::CeilToInt(editorSettings->EstimatedWordPerLine * Ratio));
 
-	TArray<FString> hardLines;
-	fullText.ParseIntoArray(hardLines, TEXT("\n"), false);
+	const FString FullText = EditedPage->PageContent.ToString();
+	TArray<FString> Lines;
+	FullText.ParseIntoArray(Lines, TEXT("\n"), false);
 
-	int32 totalWrappedLines = 0;
-	for (const FString& hardLine : hardLines)
+	int32 TotalLines = 0;
+	for (const FString& Line : Lines)
 	{
-		TArray<FString> words;
-		hardLine.ParseIntoArray(words, TEXT(" "), true);
-
-		FString currentSoftLine;
-		for (int32 iWord = 0; iWord < words.Num(); ++iWord)
+		const FString Trimmed = Line.TrimStartAndEnd();
+		if (Trimmed.IsEmpty())
 		{
-			FString prefix = currentSoftLine.IsEmpty() ? TEXT("") : TEXT(" ");
-			FString newLine = currentSoftLine + prefix + words[iWord];
-			float newWidth = fontMeasure->Measure(newLine, fontInfo).X;
-			if (!currentSoftLine.IsEmpty() && newWidth > wrapWidth)
-			{
-				++totalWrappedLines;
-				currentSoftLine = words[iWord];
-			}
-			else
-			{
-				currentSoftLine = newLine;
-			}
+			++TotalLines;
 		}
-		++totalWrappedLines;
+		else
+		{
+			int32 ChunkCount = Trimmed.Len() / ScaledCharactersPerLine;
+			if (Trimmed.Len() % ScaledCharactersPerLine != 0)
+				++ChunkCount;
+			TotalLines += ChunkCount;
+		}
 	}
-	return totalWrappedLines - (totalWrappedLines * 0.05f); //ugliest thing I have done in while :)
+
+	return TotalLines;
 }
+
 
 FText SMounteaMarkdownEditor::GetLineNumbers() const
 {

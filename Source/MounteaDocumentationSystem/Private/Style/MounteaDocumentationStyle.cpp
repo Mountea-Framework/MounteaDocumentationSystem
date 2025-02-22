@@ -73,13 +73,16 @@ TSharedRef<FSlateStyleSet> FMounteaDocumentationStyle::Create()
 	Style->Set("Mountea.CodeUnderlineBrush",
 		new IMAGE_BRUSH("Textures/UnderlineBrush", Icon16x16)
 	);
+	Style->Set("Mountea.MarkdownPreview",
+		new IMAGE_BRUSH("Textures/PreviewBackground", Icon16x16)
+	);
 	const FSlateFontInfo DefaultFont      = FCoreStyle::GetDefaultFontStyle(TEXT("Regular"), 15);
-	const FSlateFontInfo DefaultMonoFont  = TTF_FONT(TEXT("Fonts/JetBrainsMono-Regular"), 13);
+	const FSlateFontInfo DefaultMonoFont  = TTF_FONT(TEXT("Fonts/JetBrainsMono-Regular"), 12);
 	
 	for (const FName& TextStyleName : Settings->TextTypes)
 	{
 		FTextBlockStyle TextStyle;
-		TextStyle.ColorAndOpacity = Settings->FontColor;
+		bool bUpdateColor = true;
 
 		if (TextStyleName.IsEqual("Bold"))
 		{
@@ -93,11 +96,8 @@ TSharedRef<FSlateStyleSet> FMounteaDocumentationStyle::Create()
 		else if (TextStyleName.IsEqual("Code") || TextStyleName.IsEqual("CodeBlock"))
 		{
 			TextStyle.SetFont(DefaultMonoFont);
-			TextStyle.SetColorAndOpacity(FLinearColor::Gray);
-			TextStyle.SetUnderlineBrush(*Style->GetBrush("Mountea.CodeUnderlineBrush"));
-			TextStyle.UnderlineBrush = (*Style->GetBrush("Mountea.CodeUnderlineBrush"));
-			TextStyle.SetHighlightShape(*Style->GetBrush("Mountea.CodeUnderlineBrush"));
-			TextStyle.HighlightShape = (*Style->GetBrush("Mountea.CodeUnderlineBrush"));
+			TextStyle.SetColorAndOpacity(FLinearColor(0.7f,0.6f,0.6f));
+			bUpdateColor = false;
 		}
 		else if (TextStyleName.IsEqual("Header 1"))
 		{
@@ -119,10 +119,11 @@ TSharedRef<FSlateStyleSet> FMounteaDocumentationStyle::Create()
 		{
 			// Catch-all fallback for anything else (Regular, Link, etc.)
 			TextStyle.SetFont(DefaultFont);
+			TextStyle.ColorAndOpacity = Settings->FontColor;
 		}
-
-		// Register in the style set as "RichTextBlock.Mountea.<StyleName>"
+		
 		const FString StyleName = FString::Printf(TEXT("RichTextBlock.Mountea.%s"), *TextStyleName.ToString());
+		if (bUpdateColor) TextStyle.ColorAndOpacity = Settings->FontColor;
 		Style->Set(*StyleName, TextStyle);
 	}
 
