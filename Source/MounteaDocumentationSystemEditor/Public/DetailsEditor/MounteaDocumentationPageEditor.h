@@ -27,6 +27,8 @@ public:
 
 	void OnFinishedChangingProperties(const FPropertyChangedEvent& PropertyChangedEvent);
 
+	FText GetText(const FString& StyleName) const;
+
 private:
 	TSharedRef<SDockTab> SpawnMarkdownTab(const FSpawnTabArgs& Args);
 	
@@ -38,5 +40,3 @@ private:
 	TSharedPtr<SMultiLineEditableText> EditableTextWidget;
 	TSharedPtr<class SRichTextBlock> PreviewWindow;
 };
-
-

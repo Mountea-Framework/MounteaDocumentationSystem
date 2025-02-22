@@ -70,8 +70,11 @@ TSharedRef<FSlateStyleSet> FMounteaDocumentationStyle::Create()
 		return Style;
 	}
 
+	Style->Set("Mountea.CodeUnderlineBrush",
+		new IMAGE_BRUSH("Textures/UnderlineBrush", Icon16x16)
+	);
 	const FSlateFontInfo DefaultFont      = FCoreStyle::GetDefaultFontStyle(TEXT("Regular"), 15);
-	const FSlateFontInfo DefaultMonoFont  = FCoreStyle::GetDefaultFontStyle(TEXT("Regular"), 15);
+	const FSlateFontInfo DefaultMonoFont  = TTF_FONT(TEXT("Fonts/JetBrainsMono-Regular"), 13);
 	
 	for (const FName& TextStyleName : Settings->TextTypes)
 	{
@@ -90,6 +93,11 @@ TSharedRef<FSlateStyleSet> FMounteaDocumentationStyle::Create()
 		else if (TextStyleName.IsEqual("Code") || TextStyleName.IsEqual("CodeBlock"))
 		{
 			TextStyle.SetFont(DefaultMonoFont);
+			TextStyle.SetColorAndOpacity(FLinearColor::Gray);
+			TextStyle.SetUnderlineBrush(*Style->GetBrush("Mountea.CodeUnderlineBrush"));
+			TextStyle.UnderlineBrush = (*Style->GetBrush("Mountea.CodeUnderlineBrush"));
+			TextStyle.SetHighlightShape(*Style->GetBrush("Mountea.CodeUnderlineBrush"));
+			TextStyle.HighlightShape = (*Style->GetBrush("Mountea.CodeUnderlineBrush"));
 		}
 		else if (TextStyleName.IsEqual("Header 1"))
 		{
