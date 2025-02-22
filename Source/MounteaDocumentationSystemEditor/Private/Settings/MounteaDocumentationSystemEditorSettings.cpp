@@ -4,8 +4,9 @@
 #include "Settings/MounteaDocumentationSystemEditorSettings.h"
 
 #include "Engine/Font.h"
+#include "Settings/MounteaDocumentationSystemSettings.h"
 
-UMounteaDocumentationSystemEditorSettings::UMounteaDocumentationSystemEditorSettings()
+UMounteaDocumentationSystemEditorSettings::UMounteaDocumentationSystemEditorSettings() : Size(15)
 {
 	CategoryName = TEXT("Mountea Framework");
 	SectionName = TEXT("Mountea Documentation System (Editor)");

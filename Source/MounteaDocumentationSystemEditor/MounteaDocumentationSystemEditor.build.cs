@@ -27,6 +27,8 @@ public class MounteaDocumentationSystemEditor : ModuleRules
 				
 				"DeveloperSettings",
 				
+				"PropertyEditor",
+				
 				"MounteaDocumentationSystem"
 			});
 	}

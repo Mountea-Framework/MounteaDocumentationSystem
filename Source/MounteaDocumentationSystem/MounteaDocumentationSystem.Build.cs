@@ -10,14 +10,12 @@ public class MounteaDocumentationSystem : ModuleRules
 		
 		PublicIncludePaths.AddRange(
 			new string[] {
-				// ... add public include paths required here ...
 			}
 			);
 				
 		
 		PrivateIncludePaths.AddRange(
 			new string[] {
-				// ... add other private include paths required here ...
 			}
 			);
 			
@@ -26,7 +24,6 @@ public class MounteaDocumentationSystem : ModuleRules
 			new string[]
 			{
 				"Core",
-				// ... add other public dependencies that you statically link with here ...
 			}
 			);
 			
@@ -38,7 +35,8 @@ public class MounteaDocumentationSystem : ModuleRules
 				"Engine",
 				"Slate",
 				"SlateCore",
-				// ... add private dependencies that you statically link with here ...	
+				
+				"DeveloperSettings"
 			}
 			);
 		
@@ -46,7 +44,6 @@ public class MounteaDocumentationSystem : ModuleRules
 		DynamicallyLoadedModuleNames.AddRange(
 			new string[]
 			{
-				// ... add any modules that your module loads dynamically here ...
 			}
 			);
 	}

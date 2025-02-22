@@ -17,5 +17,6 @@ class FMounteaDocumentationSystemEditor : public IModuleInterface
 private:
 
 	TArray<FName> RegisteredCustomClassLayouts;
+	TArray<FName> RegisteredCustomPropertyLayouts;
 	TArray<TSharedPtr<class FAssetTypeActions_Base>> AssetActions;
 };

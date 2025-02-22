@@ -27,8 +27,6 @@ public:
 
 	void OnFinishedChangingProperties(const FPropertyChangedEvent& PropertyChangedEvent);
 
-	FSlateFontInfo GetEditorFont() const;
-
 private:
 	TSharedRef<SDockTab> SpawnMarkdownTab(const FSpawnTabArgs& Args);
 	

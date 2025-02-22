@@ -160,8 +160,13 @@ void SMounteaMarkdownEditor::ConvertMarkdownToRichText()
 
 	FString text = EditedPage->PageContent.ToString();
 
+	//TODO: headers should apply to whole row
+	
+	FormatTextWithTags(text, TEXT("_"), TEXT("_"), TEXT("<RichTextBlock.Italic>"), TEXT("</>"));
 	FormatTextWithTags(text, TEXT("_"), TEXT("_"), TEXT("<RichTextBlock.Italic>"), TEXT("</>"));
 	FormatTextWithTags(text, TEXT("**"), TEXT("**"), TEXT("<RichTextBlock.BoldHighlight>"), TEXT("</>"));
+
+	// todo: different font, mono!
 	FormatTextWithTags(text, TEXT("`"), TEXT("`"), TEXT("<RichTextBlock.TextHighlight>"), TEXT("</>"));
 
 	EditedPage->RichTextPageContent = FText::FromString(text);

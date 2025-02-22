@@ -3,7 +3,9 @@
 #include "AssetToolsModule.h"
 #include "Core/MounteaDocumentationPage.h"
 #include "AssetActions/MounteaDocumentationPageAssetAction.h"
+#include "DetailsEditor/DocumentationFontMappingsCustomization.h"
 #include "DetailsEditor/MounteaDocumentationPageCustomization.h"
+#include "Settings/MounteaDocumentationSystemSettings.h"
 
 DEFINE_LOG_CATEGORY(MounteaDocumentationSystemEditor);
 
@@ -12,23 +14,37 @@ DEFINE_LOG_CATEGORY(MounteaDocumentationSystemEditor);
 void FMounteaDocumentationSystemEditor::StartupModule()
 {
 	// Register Custom Detail Panels
-	/*
 	{
 		FPropertyEditorModule& PropertyModule = FModuleManager::LoadModuleChecked<FPropertyEditorModule>("PropertyEditor");
+		
+		// Register Custom Class Layouts
 		TArray<FOnGetDetailCustomizationInstance> CustomClassLayouts =
 		{
 			FOnGetDetailCustomizationInstance::CreateStatic(&FMounteaDocumentationPageCustomization::MakeInstance),
 		};
 		RegisteredCustomClassLayouts =
 		{
-			UMounteaDocumentationPage::StaticClass()->GetFName(),
+			//UMounteaDocumentationPage::StaticClass()->GetFName(),
 		};
 		for (int32 i = 0; i < RegisteredCustomClassLayouts.Num(); i++)
 		{
-			PropertyModule.RegisterCustomClassLayout(RegisteredCustomClassLayouts[i], CustomClassLayouts[i]);
+			//PropertyModule.RegisterCustomClassLayout(RegisteredCustomClassLayouts[i], CustomClassLayouts[i]);
+		}
+
+		// Register Custom Property Layouts
+		TArray<FOnGetPropertyTypeCustomizationInstance> CustomPropertyLayouts =
+		{
+			FOnGetPropertyTypeCustomizationInstance::CreateStatic(&FDocumentationFontMappingsCustomization::MakeInstance),
+		};
+		RegisteredCustomPropertyLayouts =
+		{
+			FDocumentationFontMappings::StaticStruct()->GetFName(),
+		};
+		for (int32 i = 0; i < RegisteredCustomPropertyLayouts.Num(); i++)
+		{
+			PropertyModule.RegisterCustomPropertyTypeLayout(RegisteredCustomPropertyLayouts[i], CustomPropertyLayouts[i]);
 		}
 	}
-	*/
 	
 	// Asset Actions
 	{
