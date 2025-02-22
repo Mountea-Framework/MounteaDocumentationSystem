@@ -36,6 +36,7 @@ private:
 	TObjectPtr<UMounteaDocumentationPage> EditedPage;
 	TSharedPtr<class IDetailsView> PropertyWidget;
 	TSharedPtr<SMultiLineEditableText> EditableTextWidget;
+	TSharedPtr<class SRichTextBlock> PreviewWindow;
 };
 
 

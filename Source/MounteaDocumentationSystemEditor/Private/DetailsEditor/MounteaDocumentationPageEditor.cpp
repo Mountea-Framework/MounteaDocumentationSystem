@@ -9,8 +9,10 @@
 #include "Core/MounteaDocumentationPage.h"
 #include "Settings/MounteaDocumentationSystemEditorSettings.h"
 #include "Slate/MounteaMarkdownEditor.h"
+#include "TextDecorators/MounteaRichTextDecorators.h"
 #include "Widgets/Text/SMultiLineEditableText.h"
 #include "Widgets/Text/SRichTextBlock.h"
+#include "Style/MounteaDocumentationStyle.h"
 
 #define LOCTEXT_NAMESPACE "MounteaDocumentationEditor"
 
@@ -104,6 +106,10 @@ void FMounteaDocumentationPageEditor::UnregisterTabSpawners(const TSharedRef<cla
 
 TSharedRef<SDockTab> FMounteaDocumentationPageEditor::SpawnMarkdownTab(const FSpawnTabArgs& Args)
 {
+	TArray<TSharedRef<ITextDecorator>> Decorators;
+	Decorators.Add(MakeShared<UMounteaItalicDecorator>());
+	Decorators.Add(MakeShared<UMounteaCodeDecorator>());
+	
 	return SNew(SDockTab)
 		.TabRole(ETabRole::PanelTab)
 		[
@@ -158,20 +164,16 @@ TSharedRef<SDockTab> FMounteaDocumentationPageEditor::SpawnMarkdownTab(const FSp
 						.Padding(10)
 						.BorderBackgroundColor(FLinearColor::Transparent)
 						[
-							SNew(SRichTextBlock)
+							SAssignNew(PreviewWindow, SRichTextBlock)
 							.AutoWrapText(true)
 							.Text_Lambda([this]() -> FText { return IsValid(EditedPage) ? EditedPage->RichTextPageContent : FText::GetEmpty(); })
+							.Decorators( Decorators )
+							.DecoratorStyleSet(&FMounteaDocumentationStyle::Get())
 						]
 					]
 				]
 			]
 		];
-}
-
-FSlateFontInfo FMounteaDocumentationPageEditor::GetEditorFont() const
-{
-	auto editorSettings = GetMutableDefault<UMounteaDocumentationSystemEditorSettings>();
-	return editorSettings->GetEditorFont();
 }
 
 TSharedRef<SDockTab> FMounteaDocumentationPageEditor::SpawnDetailsTab(const FSpawnTabArgs& Args)

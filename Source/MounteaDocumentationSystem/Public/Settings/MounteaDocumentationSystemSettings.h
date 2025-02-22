@@ -6,6 +6,8 @@
 #include "Engine/DeveloperSettings.h"
 #include "MounteaDocumentationSystemSettings.generated.h"
 
+class UFont;
+
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnDocumentationPreviewFontChanged);
 
 USTRUCT(BlueprintType)
@@ -66,6 +68,9 @@ protected:
 
 public:
 
+	UFUNCTION()
+	void RefreshPreviewFonts();
+
 	FSlateFontInfo GetFont(const FName& Type) const;
 	
 public:
@@ -83,4 +88,9 @@ private:
 	
 	UFUNCTION()
 	TArray<FName> GetTextTypes() const;
+
+#if WITH_EDITOR
+	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;	
+#endif
+	
 };

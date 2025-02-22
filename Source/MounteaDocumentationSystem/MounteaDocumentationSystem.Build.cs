@@ -23,7 +23,8 @@ public class MounteaDocumentationSystem : ModuleRules
 		PublicDependencyModuleNames.AddRange(
 			new string[]
 			{
-				"Core",
+				"Core", 
+				"UMG",
 			}
 			);
 			
@@ -35,6 +36,7 @@ public class MounteaDocumentationSystem : ModuleRules
 				"Engine",
 				"Slate",
 				"SlateCore",
+				"Projects",
 				
 				"DeveloperSettings"
 			}

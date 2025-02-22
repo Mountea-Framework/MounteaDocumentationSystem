@@ -13,7 +13,9 @@ public class MounteaDocumentationSystemEditor : ModuleRules
 				"Core", 
 				"CoreUObject", 
 				"Engine", 
-				"UnrealEd"
+				"UnrealEd",
+				"SlateCore",
+				"EditorStyle"
 			});
 		
 		PrivateDependencyModuleNames.AddRange(
@@ -21,6 +23,7 @@ public class MounteaDocumentationSystemEditor : ModuleRules
 			{
 				"Slate",
 				"SlateCore",
+				"EditorStyle",
 				
 				"EditorStyle",
 				"InputCore",

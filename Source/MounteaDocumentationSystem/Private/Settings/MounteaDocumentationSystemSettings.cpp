@@ -2,6 +2,8 @@
 
 
 #include "Settings/MounteaDocumentationSystemSettings.h"
+#include "Engine/Font.h"
+#include "Style/MounteaDocumentationStyle.h"
 
 UMounteaDocumentationSystemSettings::UMounteaDocumentationSystemSettings()
 {
@@ -9,6 +11,7 @@ UMounteaDocumentationSystemSettings::UMounteaDocumentationSystemSettings()
 	SectionName = TEXT("Mountea Documentation System");
 
 	SetDefaultTextTypes();
+	RefreshPreviewFonts();
 }
 
 void UMounteaDocumentationSystemSettings::SetDefaultTextTypes()
@@ -41,7 +44,6 @@ FSlateFontInfo UMounteaDocumentationSystemSettings::GetFont(const FName& Type) c
 	return fontConfig->PreviewFont;
 }
 
-
 TArray<FName> UMounteaDocumentationSystemSettings::GetTextTypes() const
 {
 	TSet<FName> returnValue;
@@ -58,3 +60,30 @@ TArray<FName> UMounteaDocumentationSystemSettings::GetTextTypes() const
 	returnValue.Append(TextTypes);
 	return returnValue.Array();
 }
+
+void UMounteaDocumentationSystemSettings::RefreshPreviewFonts()
+{
+	for (auto& Pair : FontMappings)
+	{
+		FDocumentationFontMappings& Mapping = Pair.Value;
+		
+		if (Mapping.FontFamily.LoadSynchronous())
+			Mapping.PreviewFont = GetFont(Pair.Key);
+		else
+			Mapping.PreviewFont = FCoreStyle::GetDefaultFontStyle(TEXT("Regular"), Mapping.Size);
+	}
+}
+
+#if WITH_EDITOR
+void UMounteaDocumentationSystemSettings::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
+{
+	Super::PostEditChangeProperty(PropertyChangedEvent);
+   
+	if (PropertyChangedEvent.GetPropertyName() == GET_MEMBER_NAME_CHECKED(UMounteaDocumentationSystemSettings, FontMappings))
+	{
+		RefreshPreviewFonts();
+		FMounteaDocumentationStyle::ReloadStyles();
+		OnDocumentationPreviewFontChanged.Broadcast();
+	}
+}
+#endif

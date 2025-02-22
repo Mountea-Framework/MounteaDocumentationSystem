@@ -2,17 +2,24 @@
 
 #include "MounteaDocumentationSystem.h"
 
+#include "Style/MounteaDocumentationStyle.h"
+
 #define LOCTEXT_NAMESPACE "FMounteaDocumentationSystemModule"
 
 void FMounteaDocumentationSystemModule::StartupModule()
 {
-	// This code will execute after your module is loaded into memory; the exact timing is specified in the .uplugin file per-module
+	// Initialize Style
+	{
+		FMounteaDocumentationStyle::Initialize();
+	}
 }
 
 void FMounteaDocumentationSystemModule::ShutdownModule()
 {
-	// This function may be called during shutdown to clean up your module.  For modules that support dynamic reloading,
-	// we call this function before unloading the module.
+	// Shutdown Style
+	{
+		FMounteaDocumentationStyle::Shutdown();
+	}
 }
 
 #undef LOCTEXT_NAMESPACE

@@ -38,7 +38,7 @@ protected:
 
 	void HandleChildTextChanged(const FText& NewText);
 	
-	void ConvertMarkdownToRichText();
+	void ConvertMarkdownToRichText() const;
 	static void FormatTextWithTags(FString& source, const FString& startMarker, const FString& endMarker, const FString& startTag, const FString& endTag);
 };
 

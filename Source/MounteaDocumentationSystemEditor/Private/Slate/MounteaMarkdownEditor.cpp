@@ -6,6 +6,7 @@
 #include "Core/MounteaDocumentationPage.h"
 #include "Fonts/FontMeasure.h"
 #include "Settings/MounteaDocumentationSystemEditorSettings.h"
+#include "Statics/MounteaDocumentationSystemStatics.h"
 
 void SMounteaMarkdownEditor::Construct(const FArguments& InArgs)
 {
@@ -154,22 +155,15 @@ void SMounteaMarkdownEditor::HandleChildTextChanged(const FText& NewText)
 	ConvertMarkdownToRichText();
 }
 
-void SMounteaMarkdownEditor::ConvertMarkdownToRichText()
+void SMounteaMarkdownEditor::ConvertMarkdownToRichText() const
 {
 	if (!EditedPage.IsValid()) return;
 
 	FString text = EditedPage->PageContent.ToString();
 
-	//TODO: headers should apply to whole row
-	
-	FormatTextWithTags(text, TEXT("_"), TEXT("_"), TEXT("<RichTextBlock.Italic>"), TEXT("</>"));
-	FormatTextWithTags(text, TEXT("_"), TEXT("_"), TEXT("<RichTextBlock.Italic>"), TEXT("</>"));
-	FormatTextWithTags(text, TEXT("**"), TEXT("**"), TEXT("<RichTextBlock.BoldHighlight>"), TEXT("</>"));
+	const FString newRichText = UMounteaDocumentationSystemStatics::ConvertMarkdownToRichText(text);
 
-	// todo: different font, mono!
-	FormatTextWithTags(text, TEXT("`"), TEXT("`"), TEXT("<RichTextBlock.TextHighlight>"), TEXT("</>"));
-
-	EditedPage->RichTextPageContent = FText::FromString(text);
+	EditedPage->RichTextPageContent = FText::FromString(newRichText);
 }
 
 void SMounteaMarkdownEditor::FormatTextWithTags(
