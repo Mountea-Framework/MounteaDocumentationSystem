@@ -64,12 +64,13 @@ TSharedRef<class FSlateStyleSet> FMounteaDocumentationStyle::Create()
 	TSharedRef< FSlateStyleSet > Style = MakeShareable(new FSlateStyleSet("MounteaDocumentationStyle"));
 	Style->SetContentRoot(IPluginManager::Get().FindPlugin("MounteaDocumentationSystem")->GetBaseDir() / TEXT("Resources"));
 
-	const UMounteaDocumentationSystemSettings* Settings = GetDefault<UMounteaDocumentationSystemSettings>();
-	
+	UMounteaDocumentationSystemSettings* Settings = GetMutableDefault<UMounteaDocumentationSystemSettings>();
+	Settings->RefreshPreviewFonts();
 	for (const auto& FontPair : Settings->FontMappings)
 	{
 		FTextBlockStyle TextStyle;
 		TextStyle.SetFont(FontPair.Value.PreviewFont);
+		TextStyle.ColorAndOpacity = Settings->FontColor;
        
 		const FString StyleName = FString::Printf(TEXT("RichTextBlock.Mountea.%s"), *FontPair.Key.ToString());
 		Style->Set(*StyleName, TextStyle);

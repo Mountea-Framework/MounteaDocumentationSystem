@@ -75,6 +75,9 @@ public:
 	
 public:
 
+	UPROPERTY(config, BlueprintReadOnly, EditAnywhere, Category="PreviewFont")
+	FLinearColor FontColor = FLinearColor::White;
+
 	/**
 	 * header1, header2 etc.
 	 */
