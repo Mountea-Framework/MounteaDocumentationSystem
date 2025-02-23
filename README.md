@@ -7,7 +7,7 @@
 [![Codacy Badge](https://app.codacy.com/project/badge/Grade/345048cfc8794b4191a400c84703100e)](https://app.codacy.com/gh/Mountea-Framework/MounteaDialogueSystem/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
 
 # MounteaDialogueSystem
-Mountea Dialogue System is an Open-source Mountea Framework Unreal Engine tool for creating (not just) complex dialogues within its own editor and validation system.
+Mountea Documentation System is an Open-source Mountea Framework Unreal Engine tool for creating in-engine documentations with (I hope) easy to use controls.
 
 ## Playable Demo
 Feel free to download the playable demo and take a look at what this plugin (in combination with its Dialogue sibling) can do in a matter of a few clicks!
