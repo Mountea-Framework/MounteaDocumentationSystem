@@ -16,12 +16,19 @@ class MOUNTEADOCUMENTATIONSYSTEM_API UMounteaDocumentationSystemStatics : public
 	GENERATED_BODY()
 
 public:
-	static bool ShouldSkipRegex(const FString& Line, int32 MatchStart);
+	
+	/**
+	 * Converts the provided Markdown text into a rich text format suitable for use in a URichTextBlock.
+	 *
+	 * @param Markdown The raw Markdown string to be converted.
+	 * @return A string containing rich text markup based on the Markdown input.
+	 */
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category="Mountea|Utilities|Markdown", meta=(CustomTag="MounteaK2Getter"))
 	static FString ConvertMarkdownToRichText(const FString& Markdown);
+	static bool ShouldSkipRegex(const FString& Line, int32 MatchStart);	
 	static bool HasUnmatchedMarker(const FString& Text, const TCHAR* Marker);
 	static FString ReplaceAllMatches(FString InLine, const FRegexPattern& Pattern, const FString& TagName);
 	static FString ConvertLine(FString Line);
-
 };
 
 namespace MounteaMarkdownPatterns
