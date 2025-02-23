@@ -24,7 +24,6 @@ public:
 
 private:
 	FReply HandleTabPress(const FGeometry& MyGeometry, const FKeyEvent& KeyEvent);
-	void OnTextChanged_Internal(const FText& NewText);
 	
 private:
 	TSharedPtr<FMarkdownTextMarshaller> MarkdownMarshaller;

@@ -16,9 +16,11 @@ class MOUNTEADOCUMENTATIONSYSTEM_API UMounteaDocumentationSystemStatics : public
 	GENERATED_BODY()
 
 public:
+	static bool ShouldSkipRegex(const FString& Line, int32 MatchStart);
 	static FString ConvertMarkdownToRichText(const FString& Markdown);
-	static FString ConvertMarkdownToRichTextPerType(const FString& Markdown,
-		const FRegexPattern& Pattern, const FString& Token);
+	static bool HasUnmatchedMarker(const FString& Text, const TCHAR* Marker);
+	static FString ReplaceAllMatches(FString InLine, const FRegexPattern& Pattern, const FString& TagName);
+	static FString ConvertLine(FString Line);
 
 };
 

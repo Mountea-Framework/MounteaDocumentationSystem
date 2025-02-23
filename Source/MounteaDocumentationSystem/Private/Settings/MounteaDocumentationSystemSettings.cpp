@@ -5,6 +5,11 @@
 #include "Engine/Font.h"
 #include "Style/MounteaDocumentationStyle.h"
 
+FSlateFontInfo FDocumentationFontMappings::ToSlateFontInto() const
+{
+	return FSlateFontInfo(FontFamily.LoadSynchronous(), Size, Typeface);
+}
+
 UMounteaDocumentationSystemSettings::UMounteaDocumentationSystemSettings()
 {
 	CategoryName = TEXT("Mountea Framework");

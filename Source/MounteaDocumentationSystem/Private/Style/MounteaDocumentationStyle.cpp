@@ -76,59 +76,37 @@ TSharedRef<FSlateStyleSet> FMounteaDocumentationStyle::Create()
 	Style->Set("Mountea.MarkdownPreview",
 		new IMAGE_BRUSH("Textures/PreviewBackground", Icon16x16)
 	);
-	const FSlateFontInfo DefaultFont      = FCoreStyle::GetDefaultFontStyle(TEXT("Regular"), 15);
-	const FSlateFontInfo DefaultMonoFont  = TTF_FONT(TEXT("Fonts/JetBrainsMono-Regular"), 12);
-	
+
 	for (const FName& TextStyleName : Settings->TextTypes)
 	{
 		FTextBlockStyle TextStyle;
-		bool bUpdateColor = true;
+		FLinearColor fontColor = Settings->FontColor;
 
-		if (TextStyleName.IsEqual("Bold"))
+		// 1) Load user-defined font if present
+		FSlateFontInfo DesiredFontInfo;
+		if (const FDocumentationFontMappings* FontConfig = Settings->FontMappings.Find(TextStyleName))
 		{
-			// Example: Bold text
-			TextStyle.SetFont(FCoreStyle::GetDefaultFontStyle(TEXT("Bold"), 15));
+			DesiredFontInfo = FontConfig->ToSlateFontInto();
+			if (!DesiredFontInfo.HasValidFont())
+				DesiredFontInfo = FCoreStyle::GetDefaultFontStyle(TEXT("Regular"), FontConfig->Size);
+			if (FontConfig->bOverrideColor)
+				fontColor = FontConfig->OverrideColor;
 		}
-		else if (TextStyleName.IsEqual("Italic"))
-		{
-			TextStyle.SetFont(FCoreStyle::GetDefaultFontStyle(TEXT("Italic"), 15));
-		}
-		else if (TextStyleName.IsEqual("Code") || TextStyleName.IsEqual("CodeBlock"))
-		{
-			TextStyle.SetFont(DefaultMonoFont);
-			TextStyle.SetColorAndOpacity(FLinearColor(0.7f,0.6f,0.6f));
-			bUpdateColor = false;
-		}
-		else if (TextStyleName.IsEqual("Header 1"))
-		{
-			TextStyle.SetFont(FCoreStyle::GetDefaultFontStyle(TEXT("Bold"), 32));
-		}
-		else if (TextStyleName.IsEqual("Header 2"))
-		{
-			TextStyle.SetFont(FCoreStyle::GetDefaultFontStyle(TEXT("Bold"), 28));
-		}
-		else if (TextStyleName.IsEqual("Header 3"))
-		{
-			TextStyle.SetFont(FCoreStyle::GetDefaultFontStyle(TEXT("Regular"), 24));
-		}
-		else if (TextStyleName.IsEqual("Header 4"))
-		{
-			TextStyle.SetFont(FCoreStyle::GetDefaultFontStyle(TEXT("Regular"), 20));
-		}
-		else
-		{
-			// Catch-all fallback for anything else (Regular, Link, etc.)
-			TextStyle.SetFont(DefaultFont);
-			TextStyle.ColorAndOpacity = Settings->FontColor;
-		}
-		
-		const FString StyleName = FString::Printf(TEXT("RichTextBlock.Mountea.%s"), *TextStyleName.ToString());
-		if (bUpdateColor) TextStyle.ColorAndOpacity = Settings->FontColor;
+		else // fallback to 16-pt Regular if no mapping is defined
+			DesiredFontInfo = FCoreStyle::GetDefaultFontStyle(TEXT("Regular"), 16);
+
+		TextStyle.SetFont(DesiredFontInfo);
+		TextStyle.SetColorAndOpacity(fontColor);
+
+		// 2) Register final style
+		FString StyleName = FString::Printf(TEXT("RichTextBlock.Mountea.%s"), *TextStyleName.ToString());
+		StyleName.RemoveSpacesInline();
 		Style->Set(*StyleName, TextStyle);
 	}
 
 	return Style;
 }
+
 
 
 #undef IMAGE_BRUSH

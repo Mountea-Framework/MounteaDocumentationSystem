@@ -35,6 +35,8 @@ private:
 	TSharedPtr<IPropertyHandle> FontFamilyProperty;
 	TSharedPtr<IPropertyHandle> TypefaceProperty;
 	TSharedPtr<IPropertyHandle> SizeProperty;
+	TSharedPtr<IPropertyHandle> OverrideColorProperty;
+	TSharedPtr<IPropertyHandle> ColorProperty;
 	
 	TSharedPtr<SComboBox<TSharedPtr<FName>>> FontEntryCombo;
 	TArray<TSharedPtr<FName>> FontEntryComboData;

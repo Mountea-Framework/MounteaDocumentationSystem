@@ -91,116 +91,104 @@ FString UMounteaDocumentationSystemStatics::ConvertMarkdownToRichText(const FStr
 }
 */
 
-FString UMounteaDocumentationSystemStatics::ConvertMarkdownToRichText(const FString& Markdown)
+bool UMounteaDocumentationSystemStatics::HasUnmatchedMarker(const FString& Text, const TCHAR* Marker)
 {
-	UMounteaDocumentationSystemSettings* Settings = GetMutableDefault<UMounteaDocumentationSystemSettings>();
-	
-	FString ProcessedText = Markdown;
-	
-	for (const auto& tokenType : Settings->TextTypes)
+	int32 count = 0;
+	int32 searchPos = 0;
+	while (true)
 	{
-		FString OpenTag = FString::Printf(TEXT("<RichTextBlock.Mountea.%s>"), *tokenType.ToString());
-		FString CloseTag = TEXT("</>");
-		FString tokenSanitized = tokenType.ToString();
-		tokenSanitized.RemoveSpacesInline();
-
-		bool bIsHeader = false;
-		
-		FRegexPattern regexPattern(TEXT(""));
-
-		if (tokenType == TEXT("Header 4"))
-		{
-			regexPattern = FRegexPattern(MounteaMarkdownPatterns::header4Pattern);
-			bIsHeader = true;
-		}
-		if (tokenType == TEXT("Header 3"))
-		{
-			regexPattern = FRegexPattern(MounteaMarkdownPatterns::header3Pattern);
-			bIsHeader = true;
-		}
-		if (tokenType == TEXT("Header 2"))
-		{
-			regexPattern = FRegexPattern(MounteaMarkdownPatterns::header2Pattern);
-			bIsHeader = true;
-		}
-		if (tokenType == TEXT("Header 1"))
-		{
-			regexPattern = FRegexPattern(MounteaMarkdownPatterns::header1Pattern);
-			bIsHeader = true;
-		}
-
-		if (bIsHeader)
-		{
-			ProcessedText = ConvertMarkdownToRichTextPerType(ProcessedText, regexPattern, tokenSanitized);
-			continue;
-		} 
-
-		if (tokenType == TEXT("Bold"))
-		{
-			regexPattern = FRegexPattern(MounteaMarkdownPatterns::boldPattern);
-		}
-		else if (tokenType == TEXT("Italic"))
-		{
-			regexPattern = FRegexPattern(MounteaMarkdownPatterns::italicPattern);
-		}
-		else if (tokenType == TEXT("CodeBlock"))
-		{
-			regexPattern = FRegexPattern(MounteaMarkdownPatterns::codeBlockPattern);
-		}
-		else if (tokenType == TEXT("Code"))
-		{
-			regexPattern = FRegexPattern(MounteaMarkdownPatterns::codePattern);
-		}
-		else if (tokenType == TEXT("Link"))
-		{
-			regexPattern = FRegexPattern(MounteaMarkdownPatterns::linkPattern);
-		}
-		else
-		{
-			continue;
-		}
-
-		ProcessedText = ConvertMarkdownToRichTextPerType(ProcessedText, regexPattern, tokenSanitized);
+		int32 found = Text.Find(Marker, ESearchCase::CaseSensitive, ESearchDir::FromStart, searchPos);
+		if (found == INDEX_NONE) break;
+		count++;
+		searchPos = found + FCString::Strlen(Marker);
 	}
-	
-	return ProcessedText.TrimEnd();
+	return (count % 2) != 0; 
 }
 
-FString UMounteaDocumentationSystemStatics::ConvertMarkdownToRichTextPerType(const FString& Markdown,
-	const FRegexPattern& Pattern, const FString& Token)
+bool UMounteaDocumentationSystemStatics::ShouldSkipRegex(const FString& Line, int32 MatchStart)
 {
-	// Use a working copy of the Markdown text.
-	FString ProcessedText = Markdown;
+	if (HasUnmatchedMarker(Line.Left(MatchStart), TEXT("**"))) return true;
+	if (HasUnmatchedMarker(Line.Left(MatchStart), TEXT("`")))  return true;
+	return false;
+}
 
-	FString OpenTag = FString::Printf(TEXT("<RichTextBlock.Mountea.%s>"), *Token);
-	FString CloseTag = TEXT("</>");
-
-	FString NewText;
-	int32 LastIndex = 0;
-	FRegexMatcher regexMatcher(Pattern, ProcessedText);
-
+FString UMounteaDocumentationSystemStatics::ReplaceAllMatches(FString InLine, const FRegexPattern& Pattern, const FString& TagName)
+{
+	FRegexMatcher regexMatcher(Pattern, InLine);
 	while (regexMatcher.FindNext())
 	{
-		int32 MatchStart = regexMatcher.GetMatchBeginning();
-		int32 MatchEnd = regexMatcher.GetMatchEnding();
+		const int32 MS = regexMatcher.GetMatchBeginning();
+		const int32 ME = regexMatcher.GetMatchEnding();
+		if (ShouldSkipRegex(InLine, MS))
+			continue;
 
-		if (MatchStart > LastIndex)
-		{
-			NewText += ProcessedText.Mid(LastIndex, MatchStart - LastIndex);
-		}
-		
-		FString TokenContent = regexMatcher.GetCaptureGroup(1);
-		NewText += OpenTag + TokenContent + CloseTag;
-		LastIndex = MatchEnd;
+		const FString Pre = InLine.Left(MS);
+		const FString Post = InLine.Mid(ME);
+		const FString Captured = regexMatcher.GetCaptureGroup(1);
+		const FString Replacement = FString::Printf(TEXT("<RichTextBlock.Mountea.%s>%s</>"), *TagName, *Captured);
+
+		InLine = Pre + Replacement + Post;
+		regexMatcher = FRegexMatcher(Pattern, InLine);
 	}
-	
-	if (LastIndex < ProcessedText.Len())
+	return InLine;
+}
+
+FString UMounteaDocumentationSystemStatics::ConvertLine(FString Line)
+{
+	// Headers first. If one matches (and isn't skipped), return immediately.
 	{
-		NewText += ProcessedText.Mid(LastIndex);
-	}
-		
-	// Update the processed text for the next token type.
-	ProcessedText = NewText;
+		static const struct
+		{
+			const TCHAR* Pattern;
+			const TCHAR* TagName;
+		} Headers[] =
+		{
+			{ MounteaMarkdownPatterns::header4Pattern, TEXT("Header4") },
+			{ MounteaMarkdownPatterns::header3Pattern, TEXT("Header3") },
+			{ MounteaMarkdownPatterns::header2Pattern, TEXT("Header2") },
+			{ MounteaMarkdownPatterns::header1Pattern, TEXT("Header1") },
+		};
 
-	return ProcessedText;
+		for (auto& H : Headers)
+		{
+			FRegexPattern P(H.Pattern);
+			FRegexMatcher M(P, Line);
+			if (M.FindNext())
+			{
+				const int32 MS = M.GetMatchBeginning();
+				if (!ShouldSkipRegex(Line, MS))
+				{
+					const int32 ME = M.GetMatchEnding();
+					const FString Pre = Line.Left(MS);
+					const FString Post = Line.Mid(ME);
+					const FString Captured = M.GetCaptureGroup(1);
+					const FString Replacement = FString::Printf(TEXT("<RichTextBlock.Mountea.%s>%s</>"), H.TagName, *Captured);
+					Line = Pre + Replacement + Post;
+				}
+				return Line;
+			}
+		}
+	}
+
+	// Inline patterns for non-header lines
+	Line = ReplaceAllMatches(Line, FRegexPattern(MounteaMarkdownPatterns::boldPattern),   TEXT("Bold"));
+	Line = ReplaceAllMatches(Line, FRegexPattern(MounteaMarkdownPatterns::italicPattern), TEXT("Italic"));
+	Line = ReplaceAllMatches(Line, FRegexPattern(MounteaMarkdownPatterns::codeBlockPattern), TEXT("CodeBlock"));
+	Line = ReplaceAllMatches(Line, FRegexPattern(MounteaMarkdownPatterns::codePattern),   TEXT("Code"));
+	Line = ReplaceAllMatches(Line, FRegexPattern(MounteaMarkdownPatterns::linkPattern),   TEXT("Link"));
+
+	return Line;
+}
+
+FString UMounteaDocumentationSystemStatics::ConvertMarkdownToRichText(const FString& Markdown)
+{
+	TArray<FString> Lines;
+	Markdown.ParseIntoArray(Lines, TEXT("\n"));
+
+	FString Output;
+	for (const FString& line : Lines)
+	{
+		Output += ConvertLine(line) + TEXT("\n");
+	}
+	return Output.TrimEnd();
 }

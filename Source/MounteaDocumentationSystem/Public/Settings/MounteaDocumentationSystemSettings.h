@@ -23,9 +23,18 @@ struct FDocumentationFontMappings
 	
 	UPROPERTY(config, EditDefaultsOnly, Category="PreviewFont", meta=(ClampMin=1, ClampMax=1000))
 	int32 Size;
+
+	UPROPERTY(config, EditDefaultsOnly, Category="PreviewFont")
+	uint8 bOverrideColor : 1;
+
+	UPROPERTY(config, EditDefaultsOnly, Category="PreviewFont", meta=(EditCondition="bOverrideColor", EditConditionHides))
+	FLinearColor OverrideColor = FLinearColor::Black;
 	
 	UPROPERTY(config, BlueprintReadOnly, Category="PreviewFont")
 	FSlateFontInfo PreviewFont;
+
+public:
+	FSlateFontInfo ToSlateFontInto() const;
 };
 
 /**

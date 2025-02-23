@@ -24,6 +24,8 @@ void FDocumentationFontMappingsCustomization::CustomizeHeader(TSharedRef<IProper
 	FontFamilyProperty = StructPropertyHandle->GetChildHandle(GET_MEMBER_NAME_CHECKED(FDocumentationFontMappings, FontFamily));
 	TypefaceProperty = StructPropertyHandle->GetChildHandle(GET_MEMBER_NAME_CHECKED(FDocumentationFontMappings, Typeface));
 	SizeProperty = StructPropertyHandle->GetChildHandle(GET_MEMBER_NAME_CHECKED(FDocumentationFontMappings, Size));
+	OverrideColorProperty = StructPropertyHandle->GetChildHandle(GET_MEMBER_NAME_CHECKED(FDocumentationFontMappings, bOverrideColor));
+	ColorProperty = StructPropertyHandle->GetChildHandle(GET_MEMBER_NAME_CHECKED(FDocumentationFontMappings, OverrideColor));
 
 	HeaderRow
 		.NameContent()
@@ -84,6 +86,8 @@ void FDocumentationFontMappingsCustomization::CustomizeChildren(TSharedRef<IProp
 
 	// Size property
 	StructBuilder.AddProperty(SizeProperty.ToSharedRef());
+	StructBuilder.AddProperty(OverrideColorProperty.ToSharedRef());
+	StructBuilder.AddProperty(ColorProperty.ToSharedRef());
 }
 
 bool FDocumentationFontMappingsCustomization::OnFilterFontAsset(const FAssetData& InAssetData)
