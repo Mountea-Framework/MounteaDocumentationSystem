@@ -108,7 +108,6 @@ FString UMounteaDocumentationSystemStatics::RawHTMLToPage(const FString& RawHTML
 		"	color: #333;"
 		"	max-width: 900px;"
 		"	margin: 0 auto;"
-		//"	padding: 20px;"
 		"}"
 		"h1, h2, h3, h4, h5, h6 {"
 		"	color: #205081;"
@@ -193,7 +192,7 @@ FString UMounteaDocumentationSystemStatics::ConvertMarkdownToHTML(const FString&
 		if (!IsHTMLLine[i] && Lines[i].TrimStartAndEnd().StartsWith(TEXT("[![")))
 		{
 			Lines[i] = ProcessBadgeLine(Lines[i]);
-			IsHTMLLine[i] = true; // Mark as processed HTML
+			IsHTMLLine[i] = true;
 		}
 	}
 	
@@ -224,11 +223,9 @@ void UMounteaDocumentationSystemStatics::IdentifyHTMLBlocks(const TArray<FString
 	{
 		const FString TrimmedLine = Lines[i].TrimStartAndEnd();
 		
-		// Skip if already marked
 		if (IsHTMLLine[i])
 			continue;
-			
-		// Check if line starts with HTML tag
+		
 		bool IsHTML = false;
 		for (const FString& Tag : HTMLTags)
 		{
@@ -241,7 +238,6 @@ void UMounteaDocumentationSystemStatics::IdentifyHTMLBlocks(const TArray<FString
 		
 		if (IsHTML)
 		{
-			// Find the tag name to look for closing tag
 			int32 TagEnd = TrimmedLine.Find(TEXT(">"));
 			if (TagEnd != INDEX_NONE)
 			{
@@ -256,33 +252,27 @@ void UMounteaDocumentationSystemStatics::IdentifyHTMLBlocks(const TArray<FString
 					TagName = TrimmedLine.Mid(1, TagEnd - 1);
 				}
 				
-				// Mark this line as HTML
 				IsHTMLLine[i] = true;
 				
-				// Check if this is a self-closing tag
 				if (TrimmedLine.EndsWith(TEXT("/>")) || 
 					TagName.Equals(TEXT("img")) || 
 					TagName.Equals(TEXT("br")) || 
 					TagName.Equals(TEXT("hr")))
 				{
-					continue; // Self-closing tag, no need to find closing
+					continue;
 				}
 				
-				// Look for the closing tag
 				FString ClosingTag = FString::Printf(TEXT("</%s>"), *TagName);
 				
-				// If the closing tag is on the same line, we're done
 				if (TrimmedLine.Contains(ClosingTag))
 				{
 					continue;
 				}
 				
-				// Look for closing tag on subsequent lines
 				for (int32 j = i + 1; j < Lines.Num(); j++)
 				{
 					if (Lines[j].Contains(ClosingTag))
 					{
-						// Mark all lines in this block as HTML
 						for (int32 k = i + 1; k <= j; k++)
 						{
 							IsHTMLLine[k] = true;
@@ -304,7 +294,6 @@ void UMounteaDocumentationSystemStatics::ProcessCodeBlocks(TArray<FString>& Line
 	
 	for (int32 i = 0; i < Lines.Num(); i++)
 	{
-		// Skip if already marked as HTML
 		if (IsHTMLLine[i])
 			continue;
 			
@@ -314,25 +303,20 @@ void UMounteaDocumentationSystemStatics::ProcessCodeBlocks(TArray<FString>& Line
 		{
 			if (!InCodeBlock)
 			{
-				// Start of code block
 				CodeBlockStart = i;
 				CodeBlockLanguage = Line.RightChop(3).TrimStartAndEnd();
 				InCodeBlock = true;
 				CodeBlockContent = TEXT("");
-				IsHTMLLine[i] = true; // Mark as processed
+				IsHTMLLine[i] = true;
 			}
 			else
 			{
-				// End of code block
 				InCodeBlock = false;
 				
-				// Process the code block
 				FString FormattedBlock = FormatCodeBlock(CodeBlockContent, CodeBlockLanguage);
 				
-				// Add to code blocks map
 				CodeBlocks.Add(CodeBlockStart, FormattedBlock);
 				
-				// Mark all lines as processed
 				for (int32 j = CodeBlockStart; j <= i; j++)
 				{
 					IsHTMLLine[j] = true;
@@ -341,14 +325,13 @@ void UMounteaDocumentationSystemStatics::ProcessCodeBlocks(TArray<FString>& Line
 		}
 		else if (InCodeBlock)
 		{
-			// Add to code block content
 			if (!CodeBlockContent.IsEmpty())
 			{
 				CodeBlockContent += TEXT("\n");
 			}
 			
 			CodeBlockContent += Lines[i];
-			IsHTMLLine[i] = true; // Mark as processed
+			IsHTMLLine[i] = true;
 		}
 	}
 }
@@ -361,11 +344,9 @@ FString UMounteaDocumentationSystemStatics::FormatCodeBlock(const FString& Conte
 	SafeContent.ReplaceInline(TEXT("<"), TEXT("&lt;"));
 	SafeContent.ReplaceInline(TEXT(">"), TEXT("&gt;"));
 	
-	// Split into lines
 	TArray<FString> ContentLines;
 	SafeContent.ParseIntoArrayLines(ContentLines, false);
 	
-	// Format as HTML
 	FString LangClass = Language.IsEmpty() ? TEXT("") : FString::Printf(TEXT(" class=\"language-%s\""), *Language);
 	FString Result = TEXT("<pre>\n");
 	
@@ -391,20 +372,16 @@ FString UMounteaDocumentationSystemStatics::BuildHTML(const TArray<FString>& Lin
 	
 	while (i < Lines.Num())
 	{
-		// Check if this line has a code block replacement
 		if (CodeBlocks.Contains(i))
 		{
-			// Close any open paragraph
 			if (InParagraph)
 			{
 				Result += TEXT("</p>\n");
 				InParagraph = false;
 			}
 			
-			// Add the code block
 			Result += CodeBlocks[i] + TEXT("\n");
 			
-			// Find the end of the code block (next non-marked line)
 			int32 j = i + 1;
 			while (j < Lines.Num() && IsHTMLLine[j])
 			{
@@ -415,17 +392,14 @@ FString UMounteaDocumentationSystemStatics::BuildHTML(const TArray<FString>& Lin
 			continue;
 		}
 		
-		// Check if this is a preserved HTML line
 		if (IsHTMLLine[i])
 		{
-			// Close any open paragraph
 			if (InParagraph)
 			{
 				Result += TEXT("</p>\n");
 				InParagraph = false;
 			}
 			
-			// Add the HTML line as is
 			Result += Lines[i] + TEXT("\n");
 			i++;
 			continue;
@@ -433,7 +407,6 @@ FString UMounteaDocumentationSystemStatics::BuildHTML(const TArray<FString>& Lin
 		
 		const FString& Line = Lines[i].TrimStartAndEnd();
 		
-		// Skip empty lines
 		if (Line.IsEmpty())
 		{
 			// Close any open paragraph
@@ -450,7 +423,6 @@ FString UMounteaDocumentationSystemStatics::BuildHTML(const TArray<FString>& Lin
 		// Process based on content type
 		if (Line.StartsWith(TEXT("#")))
 		{
-			// Header
 			if (InParagraph)
 			{
 				Result += TEXT("</p>\n");
@@ -461,14 +433,12 @@ FString UMounteaDocumentationSystemStatics::BuildHTML(const TArray<FString>& Lin
 		}
 		else if (Line.StartsWith(TEXT("-")) || Line.StartsWith(TEXT("*")) || IsOrderedListItem(Line))
 		{
-			// List
 			if (InParagraph)
 			{
 				Result += TEXT("</p>\n");
 				InParagraph = false;
 			}
 			
-			// Find list boundaries
 			int32 ListStart = i;
 			int32 ListEnd = i;
 			
@@ -480,14 +450,12 @@ FString UMounteaDocumentationSystemStatics::BuildHTML(const TArray<FString>& Lin
 				ListEnd++;
 			}
 			
-			// Process the list
 			Result += ProcessListBlock(Lines, ListStart, ListEnd) + TEXT("\n");
 			i = ListEnd;
 			continue;
 		}
 		else if (Line.StartsWith(TEXT(">")))
 		{
-			// Blockquote
 			if (InParagraph)
 			{
 				Result += TEXT("</p>\n");
@@ -498,21 +466,18 @@ FString UMounteaDocumentationSystemStatics::BuildHTML(const TArray<FString>& Lin
 		}
 		else
 		{
-			// Regular paragraph text
 			if (!InParagraph)
 			{
 				Result += TEXT("<p>");
 				InParagraph = true;
 			}
 			
-			// Add the text (will be processed for inline elements later)
 			Result += Line;
 		}
 		
 		i++;
 	}
 	
-	// Close any open paragraph
 	if (InParagraph)
 	{
 		Result += TEXT("</p>\n");
@@ -523,16 +488,12 @@ FString UMounteaDocumentationSystemStatics::BuildHTML(const TArray<FString>& Lin
 
 FString UMounteaDocumentationSystemStatics::ProcessInlineElements(FString Content)
 {
-	// Process any remaining badges (if any weren't caught in the line-processing stage)
 	Content = ProcessBadgeLinks(Content);
-	
-	// Process regular images (making sure to skip those in HTML)
+
 	Content = ProcessImages(Content);
-	
-	// Process regular links (also skipping HTML sections)
+
 	Content = ProcessLinks(Content);
-	
-	// Process text formatting 
+ 
 	Content = ProcessTextFormatting(Content);
 	
 	return Content;
@@ -551,7 +512,7 @@ FString UMounteaDocumentationSystemStatics::ProcessBadgeLine(const FString& Line
 		const FString LinkUrl = BadgeMatcher.GetCaptureGroup(3);
 		
 		return FString::Printf(
-			TEXT("<a href=\"%s\"><img src=\"%s\" alt=\"%s\" style=\"max-width: 100%%;\"></a>"),
+			TEXT("<a href=\"%s\" target=\"blank\" rel=\"noopener noreferrer\"><img src=\"%s\" alt=\"%s\" style=\"max-width: 100%%;\"></a>"),
 			*LinkUrl, *ImgUrl, *AltText
 		);
 	}
@@ -579,7 +540,7 @@ FString UMounteaDocumentationSystemStatics::ProcessBadgeLinks(FString Content)
 			const FString LinkUrl = BadgeMatcher.GetCaptureGroup(3);
 			
 			FString Replacement = FString::Printf(
-				TEXT("<a href=\"%s\"><img src=\"%s\" alt=\"%s\" style=\"max-width: 100%%;\"></a>"), 
+				TEXT("<a href=\"%s\" target=\"blank\" rel=\"noopener noreferrer\"><img src=\"%s\" alt=\"%s\" style=\"max-width: 100%%;\"></a>"), 
 				*LinkUrl, *ImgUrl, *AltText
 			);
 			
@@ -611,7 +572,6 @@ FString UMounteaDocumentationSystemStatics::ProcessImages(FString Content)
 		
 		if (Start >= 0 && End > Start && End <= Content.Len())
 		{
-			// Check if this is part of a badge link
 			const FString PrefixCheck = Start > 0 ? Content.Mid(Start - 1, 1) : TEXT("");
 			if (PrefixCheck.Equals(TEXT("[")))
 			{
@@ -666,7 +626,7 @@ FString UMounteaDocumentationSystemStatics::ProcessLinks(FString Content)
 			}
 			
 			FString Replacement = FString::Printf(
-				TEXT("<a href=\"%s\">%s</a>"), 
+				TEXT("<a href=\"%s\" target=\"blank\" rel=\"noopener noreferrer\">%s</a>"), 
 				*LinkUrl, *LinkText
 			);
 			
@@ -684,15 +644,12 @@ FString UMounteaDocumentationSystemStatics::ProcessLinks(FString Content)
 
 FString UMounteaDocumentationSystemStatics::ProcessTextFormatting(FString Content)
 {
-	// Process bold text
 	Content = ReplacePattern(Content, TEXT("\\*\\*([^\\*]+)\\*\\*"), TEXT("<strong>$1</strong>"));
 	Content = ReplacePattern(Content, TEXT("__([^_]+)__"), TEXT("<strong>$1</strong>"));
 	
-	// Process italic text
 	Content = ReplacePattern(Content, TEXT("\\*([^\\*]+)\\*"), TEXT("<em>$1</em>"));
 	Content = ReplacePattern(Content, TEXT("_([^_]+)_"), TEXT("<em>$1</em>"));
 	
-	// Process inline code
 	Content = ReplacePattern(Content, TEXT("`([^`]+)`"), TEXT("<code>$1</code>"));
 	
 	return Content;
@@ -716,7 +673,6 @@ FString UMounteaDocumentationSystemStatics::ReplacePattern(const FString& Conten
 			const FString WholeMatch = Result.Mid(Start, End - Start);
 			FString NewText = Replacement;
 			
-			// Replace capture groups
 			for (int32 i = 1; i <= 9; i++)
 			{
 				if (Matcher.GetCaptureGroupBeginning(i) != -1)
@@ -765,7 +721,6 @@ FString UMounteaDocumentationSystemStatics::ProcessListBlock(const TArray<FStrin
 		
 		if (IsOrdered)
 		{
-			// Extract the text after the number and dot
 			int32 DotPos = Lines[i].Find(TEXT("."));
 			if (DotPos != INDEX_NONE)
 			{
@@ -774,7 +729,6 @@ FString UMounteaDocumentationSystemStatics::ProcessListBlock(const TArray<FStrin
 		}
 		else
 		{
-			// Extract the text after the bullet
 			FString Line = Lines[i].TrimStartAndEnd();
 			if (Line.StartsWith(TEXT("-")))
 			{
@@ -786,7 +740,6 @@ FString UMounteaDocumentationSystemStatics::ProcessListBlock(const TArray<FStrin
 			}
 		}
 		
-		// Process item text for inline formatting
 		ItemText = ProcessInlineTextForItem(ItemText);
 		
 		Result += FString::Printf(TEXT("  <li>%s</li>\n"), *ItemText);
@@ -799,16 +752,13 @@ FString UMounteaDocumentationSystemStatics::ProcessListBlock(const TArray<FStrin
 FString UMounteaDocumentationSystemStatics::ProcessInlineTextForItem(const FString& Text)
 {
 	FString Result = Text;
-	
-	// Process bold
+
 	Result = ReplacePattern(Result, TEXT("\\*\\*([^\\*]+)\\*\\*"), TEXT("<strong>$1</strong>"));
 	Result = ReplacePattern(Result, TEXT("__([^_]+)__"), TEXT("<strong>$1</strong>"));
-	
-	// Process italic
+
 	Result = ReplacePattern(Result, TEXT("\\*([^\\*]+)\\*"), TEXT("<em>$1</em>"));
 	Result = ReplacePattern(Result, TEXT("_([^_]+)_"), TEXT("<em>$1</em>"));
-	
-	// Process code
+
 	Result = ReplacePattern(Result, TEXT("`([^`]+)`"), TEXT("<code>$1</code>"));
 	
 	return Result;
