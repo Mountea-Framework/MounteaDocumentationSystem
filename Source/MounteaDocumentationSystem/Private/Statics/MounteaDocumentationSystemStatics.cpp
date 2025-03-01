@@ -319,7 +319,7 @@ FString UMounteaDocumentationSystemStatics::FormatCodeBlock(const FString& Conte
 
 FString UMounteaDocumentationSystemStatics::BuildHTML(const TArray<FString>& Lines, const TArray<bool>& IsHTMLLine, const TMap<int32, FString>& CodeBlocks)
 {
-	FString Result;
+    FString Result;
 	int32 i = 0;
 	bool InParagraph = false;
 	
@@ -835,51 +835,52 @@ FString UMounteaDocumentationSystemStatics::ProcessTable(const TArray<FString>& 
 		return Lines[Start];
 	}
 
-	FString Result = TEXT("<table>\n  <thead>\n    <tr>\n");
-    
+	FString Result = TEXT("<table class=\"mountea-markdown-table\">\n  <thead>\n	<tr>\n");
+	
 	// Parse header row
 	TArray<FString> HeaderCells;
 	Lines[Start].ParseIntoArray(HeaderCells, TEXT("|"), true);
-    
+	
 	for (FString& Cell : HeaderCells)
 	{
 		Cell = Cell.TrimStartAndEnd();
 		if (Cell.Replace(TEXT("-"), TEXT("")).TrimStartAndEnd().IsEmpty())
 			continue;
-        
+		
 		FString ProcessedCell = ProcessLinks(ProcessInlineTextForItem(Cell));
-		Result += FString::Printf(TEXT("      <th>%s</th>\n"), *ProcessedCell);
+		Result += FString::Printf(TEXT("	  <th>%s</th>\n"), *ProcessedCell);
 	}
-    
-	Result += TEXT("    </tr>\n  </thead>\n  <tbody>\n");
-    
+	
+	Result += TEXT("	</tr>\n  </thead>\n  <tbody>\n");
+	
 	// Process body rows
 	for (int32 i = Start + 2; i < Lines.Num(); i++)
 	{
 		const FString& Line = Lines[i].TrimStartAndEnd();
-        
-		// Stop if we encounter another table header or a non-table line
+		
+		// Stop if we encounter another potential table header or a non-table line
 		if (!Line.Contains(TEXT("|")) || Line.Contains(TEXT("------")) || Lines[i].StartsWith(TEXT("#")))
 			break;
-        
-		Result += TEXT("    <tr>\n");
-        
+		
+		Result += TEXT("	<tr>\n");
+		
 		TArray<FString> RowCells;
 		Line.ParseIntoArray(RowCells, TEXT("|"), true);
-        
+		
 		for (FString& Cell : RowCells)
 		{
 			Cell = Cell.TrimStartAndEnd();
 			FString ProcessedCell = ProcessLinks(ProcessInlineTextForItem(Cell));
-			Result += FString::Printf(TEXT("      <td>%s</td>\n"), *ProcessedCell);
+			Result += FString::Printf(TEXT("	  <td>%s</td>\n"), *ProcessedCell);
 		}
-        
-		Result += TEXT("    </tr>\n");
+		
+		Result += TEXT("	</tr>\n");
 		IsHTMLLine[i] = true;
+		Start = i; // Update Start to the last processed line
 	}
-    
+	
 	Result += TEXT("  </tbody>\n</table>");
 	IsHTMLLine[Start] = true;
-    
+	
 	return Result;
 }
