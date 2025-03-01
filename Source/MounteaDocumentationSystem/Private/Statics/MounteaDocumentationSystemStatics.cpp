@@ -107,6 +107,7 @@ FString UMounteaDocumentationSystemStatics::ConvertMarkdownToRichText(const FStr
 	return Output.TrimEnd();
 }
 
+
 FString UMounteaDocumentationSystemStatics::RawHTMLToPage(const FString& RawHTML)
 {
 	const auto newStyle = GetDefault<UMounteaDocumentationSystemSettings>();
@@ -157,6 +158,9 @@ FString UMounteaDocumentationSystemStatics::ConvertMarkdownToHTML(const FString&
 	
 	// Stage 6: Process remaining inline elements
 	ProcessedHTML = ProcessInlineElements(ProcessedHTML);
+
+	// Stage 7: Fix any broken HTML tables that didn't get properly formatted
+	ProcessedHTML = ConvertMarkdownTablesToHTML(ProcessedHTML);
 	
 	return ProcessedHTML.TrimEnd();
 }
@@ -373,7 +377,21 @@ FString UMounteaDocumentationSystemStatics::BuildHTML(const TArray<FString>& Lin
 		}
 		
 		// Process based on content type
-		if (Line.StartsWith(TEXT("#")))
+		// Check for table first, as table separators can be mistaken for list items
+		if (IsTableRow(Line) && i + 1 < Lines.Num() && IsTableSeparator(Lines[i + 1].TrimStartAndEnd()))
+		{
+			if (InParagraph)
+			{
+				Result += TEXT("</p>\n");
+				InParagraph = false;
+			}
+			
+			int32 CurrentIndex = i;
+			Result += ProcessTable(Lines, CurrentIndex, const_cast<TArray<bool>&>(IsHTMLLine)) + TEXT("\n");
+			i = CurrentIndex + 1; // Skip to the end of table
+			continue;
+		}
+		else if (Line.StartsWith(TEXT("#")))
 		{
 			if (InParagraph)
 			{
@@ -383,7 +401,9 @@ FString UMounteaDocumentationSystemStatics::BuildHTML(const TArray<FString>& Lin
 			
 			Result += ProcessHeaderLine(Line) + TEXT("\n");
 		}
-		else if (Line.StartsWith(TEXT("-")) || Line.StartsWith(TEXT("*")) || IsOrderedListItem(Line))
+		else if ((Line.StartsWith(TEXT("-")) && !Line.Contains(TEXT("|"))) || 
+				 (Line.StartsWith(TEXT("*")) && !Line.Contains(TEXT("|"))) || 
+				 (IsOrderedListItem(Line) && !Line.Contains(TEXT("|"))))
 		{
 			if (InParagraph)
 			{
@@ -395,9 +415,9 @@ FString UMounteaDocumentationSystemStatics::BuildHTML(const TArray<FString>& Lin
 			int32 ListEnd = i;
 			
 			while (ListEnd < Lines.Num() && !IsHTMLLine[ListEnd] && 
-				  (Lines[ListEnd].TrimStartAndEnd().StartsWith(TEXT("-")) || 
-					Lines[ListEnd].TrimStartAndEnd().StartsWith(TEXT("*")) ||
-					IsOrderedListItem(Lines[ListEnd].TrimStartAndEnd())))
+				  ((Lines[ListEnd].TrimStartAndEnd().StartsWith(TEXT("-")) && !Lines[ListEnd].Contains(TEXT("|"))) || 
+				   (Lines[ListEnd].TrimStartAndEnd().StartsWith(TEXT("*")) && !Lines[ListEnd].Contains(TEXT("|"))) ||
+				   (IsOrderedListItem(Lines[ListEnd].TrimStartAndEnd()) && !Lines[ListEnd].Contains(TEXT("|")))))
 			{
 				ListEnd++;
 			}
@@ -732,3 +752,212 @@ bool UMounteaDocumentationSystemStatics::IsOrderedListItem(const FString& Line)
 	FRegexMatcher Matcher(Pattern, Line);
 	return Matcher.FindNext();
 }
+
+bool UMounteaDocumentationSystemStatics::IsTableRow(const FString& Line)
+{
+	// Table rows have at least one pipe character and aren't code blocks, lists, etc.
+	if (Line.IsEmpty() || 
+		Line.StartsWith(TEXT("```")) || 
+		Line.StartsWith(TEXT("#")) || 
+		Line.StartsWith(TEXT(">")) || 
+		Line.StartsWith(TEXT("-")) || 
+		Line.StartsWith(TEXT("*")))
+	{
+		return false;
+	}
+	
+	return Line.Contains(TEXT("|"));
+}
+
+bool UMounteaDocumentationSystemStatics::IsTableSeparator(const FString& Line)
+{
+	if (!IsTableRow(Line))
+	{
+		return false;
+	}
+	
+	// Process each cell in the separator row
+	TArray<FString> Cells = ParseTableRow(Line);
+	
+	// Each cell in a separator row should only contain dashes, colons, and spaces
+	for (const FString& Cell : Cells)
+	{
+		FString Trimmed = Cell.TrimStartAndEnd();
+		if (Trimmed.IsEmpty())
+		{
+			continue;
+		}
+		
+		for (int32 i = 0; i < Trimmed.Len(); i++)
+		{
+			TCHAR C = Trimmed[i];
+			if (C != TEXT('-') && C != TEXT(':') && C != TEXT(' '))
+			{
+				return false;
+			}
+		}
+		
+		// Must have at least one dash to be a separator
+		if (!Trimmed.Contains(TEXT("-")))
+		{
+			return false;
+		}
+	}
+	
+	return true;
+}
+
+TArray<FString> UMounteaDocumentationSystemStatics::ParseTableRow(const FString& Line)
+{
+	TArray<FString> Cells;
+	FString CleanLine = Line.TrimStartAndEnd();
+
+	if (CleanLine.StartsWith(TEXT("|")))
+		CleanLine = CleanLine.RightChop(1);
+	if (CleanLine.EndsWith(TEXT("|")))
+		CleanLine = CleanLine.LeftChop(1);
+
+	CleanLine.ParseIntoArray(Cells, TEXT("|"));
+
+	for (FString& Cell : Cells)
+	{
+		Cell = Cell.TrimStartAndEnd();
+	}
+	
+	return Cells;
+}
+
+FString UMounteaDocumentationSystemStatics::ProcessTable(const TArray<FString>& Lines, int32& Start, TArray<bool>& IsHTMLLine)
+{
+	// First check if we have at least 2 rows (header + separator)
+	if (Start + 1 >= Lines.Num())
+	{
+		return Lines[Start];
+	}
+	
+	// Verify the second row is actually a separator
+	if (!IsTableSeparator(Lines[Start + 1].TrimStartAndEnd()))
+	{
+		return Lines[Start];
+	}
+
+	int32 End = Start;
+	// Find the end of the table
+	while (End < Lines.Num() && IsTableRow(Lines[End].TrimStartAndEnd()))
+	{
+		End++;
+	}
+
+	FString Result = TEXT("<table class=\"mountea-markdown-table\">\n");
+
+	// Process Header Row
+	TArray<FString> HeaderCells = ParseTableRow(Lines[Start].TrimStartAndEnd());
+	Result += TEXT("  <thead>\n    <tr>\n");
+	for (const FString& Cell : HeaderCells)
+	{
+		FString ProcessedCell = ProcessInlineTextForItem(Cell);
+		Result += FString::Printf(TEXT("      <th>%s</th>\n"), *ProcessedCell);
+	}
+	Result += TEXT("    </tr>\n  </thead>\n");
+
+	// Process Body Rows
+	Result += TEXT("  <tbody>\n");
+	for (int32 i = Start + 2; i < End; i++)
+	{
+		Result += TEXT("    <tr>\n");
+		TArray<FString> RowCells = ParseTableRow(Lines[i].TrimStartAndEnd());
+
+		// Ensure rows align with headers
+		while (RowCells.Num() < HeaderCells.Num())
+		{
+			RowCells.Add(TEXT(""));
+		}
+		if (RowCells.Num() > HeaderCells.Num())
+		{
+			RowCells.SetNum(HeaderCells.Num());
+		}
+
+		for (const FString& Cell : RowCells)
+		{
+			FString ProcessedCell = ProcessInlineTextForItem(Cell);
+			Result += FString::Printf(TEXT("      <td>%s</td>\n"), *ProcessedCell);
+		}
+		Result += TEXT("    </tr>\n");
+	}
+	Result += TEXT("  </tbody>\n</table>");
+
+	// Mark processed lines
+	for (int32 i = Start; i < End; i++)
+	{
+		IsHTMLLine[i] = true;
+	}
+
+	Start = End - 1;
+
+	return Result;
+}
+
+FString UMounteaDocumentationSystemStatics::ConvertMarkdownTablesToHTML(const FString& ProcessedHTML)
+{
+	TArray<FString> Lines;
+	ProcessedHTML.ParseIntoArrayLines(Lines);
+	FString HTML;
+	bool InTable = false;
+	FString TableHTML;
+    
+	for (int32 i = 0; i < Lines.Num(); i++)
+	{
+		if (Lines[i].Contains(TEXT(" | ")) && !Lines[i].Contains(TEXT("<table")))
+		{
+			if (!InTable)
+			{
+				InTable = true;
+				TableHTML = TEXT("<table>\n");
+			}
+            
+			TArray<FString> Cells;
+			Lines[i].TrimStartAndEnd().ParseIntoArray(Cells, TEXT("|"), true);
+            
+			if (i < Lines.Num() - 1 && Lines[i + 1].Contains(TEXT("---"))) // Header Row
+			{
+				TableHTML += TEXT("  <thead>\n    <tr>\n");
+				for (FString& Cell : Cells)
+				{
+					Cell = Cell.TrimStartAndEnd();
+					TableHTML += FString::Printf(TEXT("      <th>%s</th>\n"), *Cell);
+				}
+				TableHTML += TEXT("    </tr>\n  </thead>\n  <tbody>\n");
+				i++; // Skip separator row
+			}
+			else
+			{
+				TableHTML += TEXT("    <tr>\n");
+				for (FString& Cell : Cells)
+				{
+					Cell = Cell.TrimStartAndEnd();
+					TableHTML += FString::Printf(TEXT("      <td>%s</td>\n"), *Cell);
+				}
+				TableHTML += TEXT("    </tr>\n");
+			}
+		}
+		else
+		{
+			if (InTable)
+			{
+				InTable = false;
+				TableHTML += TEXT("  </tbody>\n</table>\n");
+				HTML += TableHTML;
+			}
+			HTML += Lines[i] + TEXT("\n");
+		}
+	}
+    
+	if (InTable)
+	{
+		TableHTML += TEXT("  </tbody>\n</table>\n");
+		HTML += TableHTML;
+	}
+    
+	return HTML;
+}
+

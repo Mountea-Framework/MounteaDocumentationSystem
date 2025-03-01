@@ -115,6 +115,28 @@ void UMounteaDocumentationSystemSettings::SetDefaultCSS()
 	ul, ol {
 		padding-left: 20px;
 	}
+
+	.mountea-markdown-table {
+	  border-collapse: collapse;
+	  width: 100%;
+	  margin: 1em 0;
+	}
+
+	.mountea-markdown-table th, 
+	.mountea-markdown-table td {
+	  border: 1px solid #ddd;
+	  padding: 8px;
+	  text-align: left;
+	}
+
+	.mountea-markdown-table th {
+	  background-color: #f2f2f2;
+	  font-weight: bold;
+	}
+
+	.mountea-markdown-table tr:nth-child(even) {
+	  background-color: #f9f9f9;
+	}
 	)";
 }
 

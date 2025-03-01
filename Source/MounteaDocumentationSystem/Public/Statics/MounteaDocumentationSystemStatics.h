@@ -65,6 +65,11 @@ public:
 	static FString ProcessInlineTextForItem(const FString& Text);
 	static FString ProcessBlockquoteLine(const FString& Line);
 	static bool IsOrderedListItem(const FString& Line);
+	static bool IsTableRow(const FString& Line);
+	static bool IsTableSeparator(const FString& Line);
+	static TArray<FString> ParseTableRow(const FString& Line);
+	static FString ProcessTable(const TArray<FString>& Lines, int32& Start, TArray<bool>& IsHTMLLine);
+	static FString ConvertMarkdownTablesToHTML(const FString& HTML);
 };
 
 namespace MounteaMarkdownPatterns
