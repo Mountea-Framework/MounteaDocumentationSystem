@@ -64,7 +64,7 @@ FText FMounteaDocumentationPageCustomization::GetMarkdownText() const
 FText FMounteaDocumentationPageCustomization::GetRenderedMarkdownText() const
 {
 	// Placeholder - integrate Markdown parser here
-	return TargetPage.IsValid() ? TargetPage->RichTextPageContent : FText::GetEmpty();
+	return TargetPage.IsValid() ? TargetPage->TranslatedPageContent : FText::GetEmpty();
 }
 
 void FMounteaDocumentationPageCustomization::OnMarkdownTextChanged(const FText& NewText)
@@ -73,7 +73,7 @@ void FMounteaDocumentationPageCustomization::OnMarkdownTextChanged(const FText& 
 	{
 		TargetPage->PageContent = NewText;
 		// Process Markdown and update preview
-		TargetPage->RichTextPageContent = FText::FromString(TEXT("[Rendered Markdown]"));
+		TargetPage->TranslatedPageContent = FText::FromString(TEXT("[Rendered Markdown]"));
 	}
 }
 

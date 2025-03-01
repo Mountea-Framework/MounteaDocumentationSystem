@@ -31,6 +31,7 @@ public class MounteaDocumentationSystemEditor : ModuleRules
 				"DeveloperSettings",
 				
 				"PropertyEditor",
+				"WebBrowser",
 				
 				"MounteaDocumentationSystem"
 			});

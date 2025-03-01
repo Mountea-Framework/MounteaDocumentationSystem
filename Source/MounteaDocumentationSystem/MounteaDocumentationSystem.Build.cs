@@ -24,7 +24,8 @@ public class MounteaDocumentationSystem : ModuleRules
 			new string[]
 			{
 				"Core", 
-				"UMG",
+				"UMG", 
+				"WebBrowser",
 			}
 			);
 			

@@ -9,10 +9,13 @@
 #include "Core/MounteaDocumentationPage.h"
 #include "Settings/MounteaDocumentationSystemEditorSettings.h"
 #include "Slate/MounteaMarkdownEditor.h"
+#include "Slate/SMounteaWebBrowser.h"
 #include "TextDecorators/MounteaRichTextDecorators.h"
 #include "Widgets/Text/SMultiLineEditableText.h"
 #include "Widgets/Text/SRichTextBlock.h"
 #include "Style/MounteaDocumentationStyle.h"
+#include "WebBrowser/Public/SWebBrowser.h"
+//#include "WebBrowser/Public/SWebBrowser.h"
 
 #define LOCTEXT_NAMESPACE "MounteaDocumentationEditor"
 
@@ -111,13 +114,63 @@ TSharedRef<SDockTab> FMounteaDocumentationPageEditor::SpawnMarkdownTab(const FSp
 	Decorators.Add(MakeShared<UMounteaItalicDecorator>());
 	Decorators.Add(MakeShared<UMounteaCodeDecorator>());
 	Decorators.Add(MakeShared<UMounteaCodeBlockDecorator>());
-	
-	return SNew(SDockTab)
-		.TabRole(ETabRole::PanelTab)
-		[
-			SNew(SOverlay)
 
-			+ SOverlay::Slot()
+	const FString BlankHTML = TEXT(
+		"<html>"
+		"<head>"
+		"<meta charset='UTF-8'>"
+		"<title>Empty Page</title>"
+		"<style>"
+		"body {"
+		"    background-color: white;"
+		"    display: flex;"
+		"    justify-content: center;"
+		"    align-items: center;"
+		"    height: 60vh;"
+		"    font-family: Arial, sans-serif;"
+		"    color: #666;"
+		"}"
+		"</style>"
+		"</head>"
+		"<body>"
+		"<p>This is a blank page. Content will be loaded soon...</p>"
+		"</body>"
+		"</html>"
+	);
+
+	
+	auto displayWindow = SNew(SDockTab)
+	.TabRole(ETabRole::PanelTab)
+	[
+		SNew(SOverlay)
+
+		+ SOverlay::Slot()
+		[
+			SNew(SHorizontalBox)
+
+			+ SHorizontalBox::Slot()
+			.FillWidth(0.5f)
+			[
+				SNew(SBorder)
+				.Padding(0)
+				.BorderImage(FAppStyle::GetBrush("Brushes.Panel"))
+			]
+
+			+ SHorizontalBox::Slot()
+			.FillWidth(0.5f)
+			[
+				SNew(SBorder)
+				.Padding(0)
+				.BorderImage(FMounteaDocumentationStyle::GetBrush("Mountea.MarkdownPreview"))
+			]
+		]
+
+		+ SOverlay::Slot()
+		[
+			SNew(SScrollBox)
+			.Orientation(Orient_Vertical)
+
+			+ SScrollBox::Slot()
 			[
 				SNew(SHorizontalBox)
 
@@ -125,58 +178,37 @@ TSharedRef<SDockTab> FMounteaDocumentationPageEditor::SpawnMarkdownTab(const FSp
 				.FillWidth(0.5f)
 				[
 					SNew(SBorder)
-					.Padding(0)
-					.BorderImage(FAppStyle::GetBrush("Brushes.Panel"))
+					.Padding(10)
+					.BorderBackgroundColor(FLinearColor::Transparent)
+					[
+						SNew(SMounteaMarkdownEditor)
+						.EditedPage(EditedPage)
+					]
 				]
 
 				+ SHorizontalBox::Slot()
 				.FillWidth(0.5f)
 				[
 					SNew(SBorder)
-					.Padding(0)
-					.BorderImage(FMounteaDocumentationStyle::GetBrush("Mountea.MarkdownPreview"))
-				]
-			]
-
-			+ SOverlay::Slot()
-			[
-				SNew(SScrollBox)
-				.Orientation(Orient_Vertical)
-
-				+ SScrollBox::Slot()
-				[
-					SNew(SHorizontalBox)
-
-					+ SHorizontalBox::Slot()
-					.FillWidth(0.5f)
+					.BorderBackgroundColor(FLinearColor::Transparent)
 					[
-						SNew(SBorder)
-						.Padding(10)
-						.BorderBackgroundColor(FLinearColor::Transparent)
-						[
-							SNew(SMounteaMarkdownEditor)
-							.EditedPage(EditedPage)
-						]
-					]
-
-					+ SHorizontalBox::Slot()
-					.FillWidth(0.5f)
-					[
-						SNew(SBorder)
-						.Padding(25)
-						.BorderBackgroundColor(FLinearColor::Transparent)
-						[
-							SAssignNew(PreviewWindow, SRichTextBlock)
-							.AutoWrapText(true)
-							.Text_Lambda([this]() -> FText { return IsValid(EditedPage) ? EditedPage->RichTextPageContent : FText::GetEmpty(); })
-							.TextStyle(&FMounteaDocumentationStyle::Get(), "RichTextBlock.Mountea.Regular")
-							.Decorators( Decorators )
-							.DecoratorStyleSet(&FMounteaDocumentationStyle::Get())
-						]
+						SAssignNew(WebBrowserWindow, SMounteaWebBrowser)
+						.ShowControls(false) 
+						.ShowAddressBar(false) 
+						.ShowErrorMessage(false)
+						.ShowInitialThrobber(false)
+						.URL_Lambda([this]() -> FText { 
+							return IsValid(EditedPage) ? EditedPage->TranslatedPageContent : FText::GetEmpty(); 
+						})
 					]
 				]
 			]
-		];
+		]
+	];
+
+	WebBrowserWindow->LoadString(BlankHTML, TEXT("main"));
+	
+	return displayWindow;
 }
 
 TSharedRef<SDockTab> FMounteaDocumentationPageEditor::SpawnDetailsTab(const FSpawnTabArgs& Args)

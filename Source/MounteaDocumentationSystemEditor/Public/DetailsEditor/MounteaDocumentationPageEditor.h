@@ -37,4 +37,5 @@ private:
 	TSharedPtr<class IDetailsView> PropertyWidget;
 	TSharedPtr<SMultiLineEditableText> EditableTextWidget;
 	TSharedPtr<class SRichTextBlock> PreviewWindow;
+	TSharedPtr<class SWebBrowser> WebBrowserWindow; 
 };

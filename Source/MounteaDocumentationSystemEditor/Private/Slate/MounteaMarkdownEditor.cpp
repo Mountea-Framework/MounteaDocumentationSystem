@@ -135,7 +135,6 @@ int32 SMounteaMarkdownEditor::CalculateManualWrappedLineCount() const
 	return TotalLines;
 }
 
-
 FText SMounteaMarkdownEditor::GetLineNumbers() const
 {
 	if (!EditableTextWidget.IsValid()) return FText::GetEmpty();
@@ -153,7 +152,7 @@ void SMounteaMarkdownEditor::HandleChildTextChanged(const FText& NewText)
 {
 	SetText(NewText);
 	
-	ConvertMarkdownToRichText();
+	ConvertMarkdownToHTMLText();
 }
 
 void SMounteaMarkdownEditor::ConvertMarkdownToRichText() const
@@ -164,44 +163,17 @@ void SMounteaMarkdownEditor::ConvertMarkdownToRichText() const
 
 	const FString newRichText = UMounteaDocumentationSystemStatics::ConvertMarkdownToRichText(text);
 
-	EditedPage->RichTextPageContent = FText::FromString(newRichText);
+	EditedPage->TranslatedPageContent = FText::FromString(newRichText);
 }
 
-void SMounteaMarkdownEditor::FormatTextWithTags(
-	FString& source,
-	const FString& startMarker,
-	const FString& endMarker,
-	const FString& startTag,
-	const FString& endTag
-)
+void SMounteaMarkdownEditor::ConvertMarkdownToHTMLText() const
 {
-	int32 searchIndex = 0;
-	while (true)
-	{
-		int32 openPos = source.Find(startMarker, ESearchCase::CaseSensitive, ESearchDir::FromStart, searchIndex);
-		if (openPos == INDEX_NONE)
-		{
-			break;
-		}
+	if (!EditedPage.IsValid()) return;
 
-		int32 closePos = source.Find(endMarker, ESearchCase::CaseSensitive, ESearchDir::FromStart, openPos + startMarker.Len());
-		if (closePos == INDEX_NONE || closePos <= openPos)
-		{
-			break;
-		}
+	FString text = EditedPage->PageContent.ToString();
 
-		int32 contentStart = openPos + startMarker.Len();
-		int32 contentLen = closePos - contentStart;
-		if (contentLen <= 0)
-		{
-			break;
-		}
+	const FString newRawHTML = UMounteaDocumentationSystemStatics::ConvertMarkdownToHTML(text);
+	const FString newHTML = UMounteaDocumentationSystemStatics::RawHTMLToPage(newRawHTML);
 
-		FString inner = source.Mid(contentStart, contentLen);
-		FString replaced = startTag + inner + endTag;
-		source = source.Left(openPos) + replaced + source.Mid(closePos + endMarker.Len());
-
-		searchIndex = openPos + replaced.Len();
-	}
+	EditedPage->TranslatedPageContent = FText::FromString(newHTML);
 }
-
