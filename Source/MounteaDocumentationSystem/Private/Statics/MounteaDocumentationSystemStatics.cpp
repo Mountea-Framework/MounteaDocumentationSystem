@@ -826,6 +826,15 @@ TArray<FString> UMounteaDocumentationSystemStatics::ParseTableRow(const FString&
 
 FString UMounteaDocumentationSystemStatics::ProcessTable(const TArray<FString>& Lines, int32& Start, TArray<bool>& IsHTMLLine)
 {
+	// Validate table structure
+	if (Start >= Lines.Num() || 
+		!Lines[Start].Contains(TEXT("|")) || 
+		(Start + 1 >= Lines.Num()) || 
+		!Lines[Start + 1].Contains(TEXT("------")))
+	{
+		return Lines[Start];
+	}
+
 	FString Result = TEXT("<table>\n  <thead>\n    <tr>\n");
     
 	// Parse header row
@@ -849,7 +858,8 @@ FString UMounteaDocumentationSystemStatics::ProcessTable(const TArray<FString>& 
 	{
 		const FString& Line = Lines[i].TrimStartAndEnd();
         
-		if (!Line.Contains(TEXT("|")))
+		// Stop if we encounter another table header or a non-table line
+		if (!Line.Contains(TEXT("|")) || Line.Contains(TEXT("------")) || Lines[i].StartsWith(TEXT("#")))
 			break;
         
 		Result += TEXT("    <tr>\n");
