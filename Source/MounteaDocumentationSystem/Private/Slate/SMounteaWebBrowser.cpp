@@ -129,4 +129,18 @@ void SMounteaWebBrowser::OnLinkClickedInternal(const FString& ClickedURL)
 {
 	if (OnLinkClicked.IsBound())
 		OnLinkClicked.Execute(FText::FromString(ClickedURL));
+
+	if (ClickedURL.StartsWith("mountea://"))
+	{
+		// Handle internal protocol links
+		FString ResourcePath = ClickedURL.RightChop(10);
+		UE_LOG(LogTemp, Error, TEXT("Internal link to resource: %s"), *ResourcePath);
+		
+		// TODO: Handle the internal resource link
+	}
+	else if (ClickedURL.StartsWith("http://") || ClickedURL.StartsWith("https://"))
+	{
+		// External URL - open in system browser
+		FPlatformProcess::LaunchURL(*ClickedURL, nullptr, nullptr);
+	}
 }

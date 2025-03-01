@@ -207,24 +207,6 @@ TSharedRef<SDockTab> FMounteaDocumentationPageEditor::SpawnMarkdownTab(const FSp
 					.URL_Lambda([this]() -> FText { 
 						return IsValid(EditedPage) ? EditedPage->TranslatedPageContent : FText::GetEmpty(); 
 					})
-					.OnLinkClicked(FOnTextChanged::CreateLambda([this](const FText& ClickedURL) {
-						const FString URL = ClickedURL.ToString();
-						UE_LOG(LogTemp, Error, TEXT("Link clicked: %s"), *URL);
-						
-						if (URL.StartsWith("mountea://"))
-						{
-							// Handle internal protocol links
-							FString ResourcePath = URL.RightChop(10);
-							UE_LOG(LogTemp, Error, TEXT("Internal link to resource: %s"), *ResourcePath);
-							
-							// TODO: Handle the internal resource link
-						}
-						else if (URL.StartsWith("http://") || URL.StartsWith("https://"))
-						{
-							// External URL - open in system browser
-							FPlatformProcess::LaunchURL(*URL, nullptr, nullptr);
-						}
-					}))
 				]
 			]
 		]

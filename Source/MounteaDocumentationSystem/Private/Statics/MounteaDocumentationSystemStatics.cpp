@@ -582,8 +582,8 @@ FString UMounteaDocumentationSystemStatics::ProcessLinks(FString Content)
 			
 			// Include the URL in the console log for debugging
 			FString Replacement = FString::Printf(
-				TEXT("<a href=\"%s\" id=\"doc-link-%d\" onclick=\"console.log('Direct onclick for link %d: %s'); console.log('MOUNTEA_LINK_CLICKED:%s');\">%s</a>"), 
-				*LinkUrl, LinkCount, LinkCount, *LinkUrl, *LinkUrl, *LinkText
+				TEXT("<a href=\"%s\" id=\"doc-link-%d\">%s</a>"), 
+				*LinkUrl, LinkCount, *LinkText
 			);
 			
 			Replacements.Add(TPair<FString, FString>(WholeMatch, Replacement));
@@ -600,11 +600,11 @@ FString UMounteaDocumentationSystemStatics::ProcessLinks(FString Content)
 
 FString UMounteaDocumentationSystemStatics::ProcessTextFormatting(FString Content)
 {
-	Content = ReplacePattern(Content, TEXT("\\*\\*([^\\*]+)\\*\\*"), TEXT("<strong>$1</strong>"));
+	Content = ReplacePattern(Content, MounteaMarkdownHTMLPatterns::BoldPattern, TEXT("<strong>$1</strong>"));
 	Content = ReplacePattern(Content, TEXT("__([^_]+)__"), TEXT("<strong>$1</strong>"));
 	
-	Content = ReplacePattern(Content, TEXT("\\*([^\\*]+)\\*"), TEXT("<em>$1</em>"));
-	Content = ReplacePattern(Content, TEXT("_([^_]+)_"), TEXT("<em>$1</em>"));
+	Content = ReplacePattern(Content, MounteaMarkdownHTMLPatterns::ItalicPattern, TEXT("<em>$1</em>"));
+	Content = ReplacePattern(Content, TEXT("_([^_<>]+)_"), TEXT("<em>$1</em>"));
 	
 	Content = ReplacePattern(Content, TEXT("`([^`]+)`"), TEXT("<code>$1</code>"));
 	
