@@ -107,26 +107,24 @@ FString UMounteaDocumentationSystemStatics::ConvertMarkdownToRichText(const FStr
 	return Output.TrimEnd();
 }
 
-
-
 FString UMounteaDocumentationSystemStatics::RawHTMLToPage(const FString& RawHTML)
 {
 	const auto newStyle = GetDefault<UMounteaDocumentationSystemSettings>();
 	return FString::Printf(TEXT(R"(
-	 <html>
-		  <head>
-				<meta charset='UTF-8'>
-				<title>Mountea Documentation</title>
-				<style>
-				%s
-				</style>
-		  </head>
-		  <body>
-				<main>
-				%s
-				</main>
-		  </body>
-	 </html>)"), *newStyle->DisplayCSS, *RawHTML);
+	<html>
+		<head>
+		  <meta charset='UTF-8'>
+		  <title>Mountea Documentation</title>
+		  <style>
+		  %s
+		  </style>
+		</head>
+		<body>
+		  <main>
+		  %s
+		  </main>
+		</body>
+	</html>)"), *newStyle->DisplayCSS, *RawHTML);
 }
 
 FString UMounteaDocumentationSystemStatics::ConvertMarkdownToHTML(const FString& Markdown) 
@@ -494,7 +492,7 @@ FString UMounteaDocumentationSystemStatics::ProcessBadgeLinks(FString Content)
 			const FString LinkUrl = BadgeMatcher.GetCaptureGroup(3);
 			
 			FString Replacement = FString::Printf(
-				TEXT("<a href=\"%s\" target=\"blank\" rel=\"noopener noreferrer\"><img src=\"%s\" alt=\"%s\" style=\"max-width: 100%%;\"></a>"), 
+				TEXT("<a href=\"%s\" target=\"blank\" rel=\"noopener noreferrer\" data-mountea-link=\"true\"><img src=\"%s\" alt=\"%s\" style=\"max-width: 100%%;\"></a>"), 
 				*LinkUrl, *ImgUrl, *AltText
 			);
 			
@@ -561,9 +559,12 @@ FString UMounteaDocumentationSystemStatics::ProcessLinks(FString Content)
 	FRegexMatcher LinkMatcher(LinkPattern, Content);
 	
 	TArray<TPair<FString, FString>> Replacements;
+	int32 LinkCount = 0;
 	
 	while (LinkMatcher.FindNext())
 	{
+		LinkCount++;
+		
 		const int32 Start = LinkMatcher.GetMatchBeginning();
 		const int32 End = LinkMatcher.GetMatchEnding();
 		
@@ -579,9 +580,10 @@ FString UMounteaDocumentationSystemStatics::ProcessLinks(FString Content)
 				continue;
 			}
 			
+			// Include the URL in the console log for debugging
 			FString Replacement = FString::Printf(
-				TEXT("<a href=\"%s\" target=\"blank\" rel=\"noopener noreferrer\">%s</a>"), 
-				*LinkUrl, *LinkText
+				TEXT("<a href=\"%s\" id=\"doc-link-%d\" onclick=\"console.log('Direct onclick for link %d: %s'); console.log('MOUNTEA_LINK_CLICKED:%s');\">%s</a>"), 
+				*LinkUrl, LinkCount, LinkCount, *LinkUrl, *LinkUrl, *LinkText
 			);
 			
 			Replacements.Add(TPair<FString, FString>(WholeMatch, Replacement));
