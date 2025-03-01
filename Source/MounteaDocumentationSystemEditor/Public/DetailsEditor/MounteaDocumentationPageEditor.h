@@ -27,10 +27,9 @@ public:
 
 	void OnFinishedChangingProperties(const FPropertyChangedEvent& PropertyChangedEvent);
 
-private:
+private:	
 	TSharedRef<SDockTab> SpawnMarkdownTab(const FSpawnTabArgs& Args);
 	
-
 	TSharedRef<SDockTab> SpawnDetailsTab(const FSpawnTabArgs& Args);
 	
 	TObjectPtr<UMounteaDocumentationPage> EditedPage;

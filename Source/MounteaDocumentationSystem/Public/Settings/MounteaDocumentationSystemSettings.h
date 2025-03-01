@@ -68,6 +68,9 @@ public:
 	UFUNCTION(CallInEditor, Category="Defaults")
 	void SetDefaultTextTypes();
 
+	UFUNCTION(CallInEditor, Category="Defaults")
+	void SetDefaultCSS();
+
 #endif
 
 protected:
@@ -83,6 +86,9 @@ public:
 	FSlateFontInfo GetFont(const FName& Type) const;
 	
 public:
+
+	UPROPERTY(config, BlueprintReadOnly, EditAnywhere, Category="DisplayStyle", meta=(MultiLine))
+	FString DisplayCSS;
 
 	UPROPERTY(config, BlueprintReadOnly, EditAnywhere, Category="PreviewFont")
 	FLinearColor FontColor = FLinearColor::Black;

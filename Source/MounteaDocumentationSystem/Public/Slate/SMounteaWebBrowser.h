@@ -11,9 +11,11 @@
 class MOUNTEADOCUMENTATIONSYSTEM_API SMounteaWebBrowser : public SWebBrowser
 {
 public:
+	
 	SLATE_BEGIN_ARGS(SMounteaWebBrowser)
 		: _InitialURL(TEXT(""))
 		, _ShowControls(true)
+		, _BrowserFps(30)
 		, _ShowAddressBar(true)
 		, _ShowErrorMessage(true)
 		, _ShowInitialThrobber(true)
@@ -24,6 +26,8 @@ public:
 		, _OnBeforePopup()
 		, _OnCreateWindow()
 		, _OnCloseWindow()
+		, _OnBeforeNavigation()
+		, _OnLoadUrl()
 	{}
 		/** Dynamic URL binding */
 		SLATE_ATTRIBUTE(FText, URL)
@@ -31,6 +35,8 @@ public:
 		SLATE_ARGUMENT(FString, InitialURL)
 		/** Whether to show standard navigation controls */
 		SLATE_ARGUMENT(bool, ShowControls)
+		/** Sets browser target fps */
+		SLATE_ARGUMENT(int32, BrowserFps)
 		/** Whether to show the address bar */
 		SLATE_ARGUMENT(bool, ShowAddressBar)
 		/** Whether to show error messages */
@@ -51,13 +57,32 @@ public:
 		SLATE_EVENT(FOnCreateWindowDelegate, OnCreateWindow)
 		/** Called when closing this window */
 		SLATE_EVENT(FOnCloseWindowDelegate, OnCloseWindow)
+		/** New event: Called before navigation */
+		SLATE_EVENT(FOnTextChanged, OnBeforeNavigation)
+		/** New event: Called when a URL is loaded */
+		SLATE_EVENT(FOnTextChanged, OnLoadUrl)
+		/** New event: Called when a link is clicked */
+		SLATE_EVENT(FOnTextChanged, OnLinkClicked)
 	SLATE_END_ARGS()
 
 	void Construct(const FArguments& InArgs);
 
 	virtual void Tick(const FGeometry& AllottedGeometry, const double InCurrentTime, const float InDeltaTime) override;
 
+protected:
+
+	/** Injects JavaScript to capture link clicks */
+	void InjectLinkClickScript();
+	
+	void HandleConsoleMessage(const FString& Message, const FString& Source, int32 Line, EWebBrowserConsoleLogSeverity Severity);
+
+	/** Called when a link is clicked in the browser */
+	void OnLinkClickedInternal(const FString& ClickedURL);
+
 private:
+
+	FOnTextChanged OnLinkClicked;
+	
 	/** Dynamic URL attribute */
 	TAttribute<FText> URLAttribute;
 	

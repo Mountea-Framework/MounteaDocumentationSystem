@@ -167,40 +167,50 @@ TSharedRef<SDockTab> FMounteaDocumentationPageEditor::SpawnMarkdownTab(const FSp
 
 		+ SOverlay::Slot()
 		[
-			SNew(SScrollBox)
-			.Orientation(Orient_Vertical)
-
-			+ SScrollBox::Slot()
+			SNew(SHorizontalBox)
+			+ SHorizontalBox::Slot()
+			.FillWidth(0.5f)
 			[
-				SNew(SHorizontalBox)
+				SNew(SScrollBox)
+				.Orientation(Orient_Vertical)
 
-				+ SHorizontalBox::Slot()
-				.FillWidth(0.5f)
+				+ SScrollBox::Slot()
 				[
-					SNew(SBorder)
-					.Padding(10)
-					.BorderBackgroundColor(FLinearColor::Transparent)
+					SNew(SHorizontalBox)
+
+					+ SHorizontalBox::Slot()
+					.FillWidth(0.5f)
 					[
-						SNew(SMounteaMarkdownEditor)
-						.EditedPage(EditedPage)
+						SNew(SBorder)
+						.Padding(10)
+						.BorderBackgroundColor(FLinearColor::Transparent)
+						[
+							SNew(SMounteaMarkdownEditor)
+							.EditedPage(EditedPage)
+						]
 					]
 				]
+			]
 
-				+ SHorizontalBox::Slot()
-				.FillWidth(0.5f)
+			+ SHorizontalBox::Slot()
+			.FillWidth(0.5f)
+			[
+				SNew(SBorder)
+				.BorderBackgroundColor(FLinearColor::Transparent)
 				[
-					SNew(SBorder)
-					.BorderBackgroundColor(FLinearColor::Transparent)
-					[
-						SAssignNew(WebBrowserWindow, SMounteaWebBrowser)
-						.ShowControls(false) 
-						.ShowAddressBar(false) 
-						.ShowErrorMessage(false)
-						.ShowInitialThrobber(false)
-						.URL_Lambda([this]() -> FText { 
-							return IsValid(EditedPage) ? EditedPage->TranslatedPageContent : FText::GetEmpty(); 
-						})
-					]
+					SAssignNew(WebBrowserWindow, SMounteaWebBrowser)
+					.ShowControls(false) 
+					.ShowAddressBar(false) 
+					.ShowErrorMessage(false)
+					.ShowInitialThrobber(false)
+					.BrowserFps(60)
+					.URL_Lambda([this]() -> FText { 
+						return IsValid(EditedPage) ? EditedPage->TranslatedPageContent : FText::GetEmpty(); 
+					})
+					.OnLinkClicked(FOnTextChanged::CreateLambda([this](const FText& ClickedURL) {
+							const FString URL = ClickedURL.ToString();
+							UE_LOG(LogTemp, Error, TEXT("Link clicked: %s"), *URL);
+					}))
 				]
 			]
 		]

@@ -17,6 +17,7 @@ UMounteaDocumentationSystemSettings::UMounteaDocumentationSystemSettings()
 
 	SetDefaultTextTypes();
 	RefreshPreviewFonts();
+	SetDefaultCSS();
 }
 
 void UMounteaDocumentationSystemSettings::SetDefaultTextTypes()
@@ -36,6 +37,85 @@ void UMounteaDocumentationSystemSettings::SetDefaultTextTypes()
 	TextTypes.Append(returnValue);
 
 	OnDocumentationPreviewFontChanged.Broadcast();
+}
+
+void UMounteaDocumentationSystemSettings::SetDefaultCSS()
+{
+	DisplayCSS = R"(
+	html, body {
+		height: 100%;
+		margin: 0;
+		padding: 0;
+		box-sizing: border-box;
+	}
+
+	body {
+		font-family: Arial, sans-serif;
+		line-height: 1.6;
+		color: #333;
+		max-width: 100%;
+		overflow: hidden; /* Prevent scrollbars */
+		display: flex;
+		flex-direction: column;
+	}
+
+	main {
+		flex: 1;
+		overflow-y: auto; /* Allow vertical scrolling inside the main content if needed */
+	}
+
+	h1, h2, h3, h4, h5, h6 {
+		color: #205081;
+		margin-top: 1.5em;
+		margin-bottom: 0.5em;
+	}
+
+	code {
+		background-color: #f5f5f5;
+		padding: 2px 4px;
+		border-radius: 3px;
+		font-family: monospace;
+	}
+
+	a {
+		color: #3572b0;
+		text-decoration: none;
+	}
+
+	a:hover {
+		text-decoration: underline;
+	}
+
+	blockquote {
+		border-left: 4px solid #ddd;
+		padding-left: 15px;
+		color: #555;
+	}
+
+	img {
+		max-width: 100%;
+	}
+
+	pre {
+		background-color: #f5f5f5;
+		padding: 10px;
+		border-radius: 3px;
+		overflow-x: auto;
+		white-space: pre-wrap;
+		word-wrap: break-word;
+	}
+
+	pre code {
+		background-color: transparent;
+		padding: 0;
+		white-space: inherit;
+		display: block;
+	}
+
+	ul, ol {
+		padding-left: 20px;
+	}
+	)";
 }
 
 FSlateFontInfo UMounteaDocumentationSystemSettings::GetFont(const FName& Type) const

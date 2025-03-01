@@ -85,79 +85,13 @@ FString UMounteaDocumentationSystemStatics::ConvertLine(FString Line)
 	}
 
 	// Inline patterns for non-header lines
-	Line = ReplaceAllMatches(Line, FRegexPattern(MounteaMarkdownPatterns::boldPattern),   TEXT("Bold"));
+	Line = ReplaceAllMatches(Line, FRegexPattern(MounteaMarkdownPatterns::boldPattern),	TEXT("Bold"));
 	Line = ReplaceAllMatches(Line, FRegexPattern(MounteaMarkdownPatterns::italicPattern), TEXT("Italic"));
 	Line = ReplaceAllMatches(Line, FRegexPattern(MounteaMarkdownPatterns::codeBlockPattern), TEXT("CodeBlock"));
-	Line = ReplaceAllMatches(Line, FRegexPattern(MounteaMarkdownPatterns::codePattern),   TEXT("Code"));
-	Line = ReplaceAllMatches(Line, FRegexPattern(MounteaMarkdownPatterns::linkPattern),   TEXT("Link"));
+	Line = ReplaceAllMatches(Line, FRegexPattern(MounteaMarkdownPatterns::codePattern),	TEXT("Code"));
+	Line = ReplaceAllMatches(Line, FRegexPattern(MounteaMarkdownPatterns::linkPattern),	TEXT("Link"));
 
 	return Line;
-}
-
-FString UMounteaDocumentationSystemStatics::RawHTMLToPage(const FString& RawHTML)
-{
-	return FString::Printf(TEXT(
-		"<html>"
-		"<head>"
-		"<meta charset='UTF-8'>"
-		"<title>Mountea Documentation</title>"
-		"<style>"
-		"body {"
-		"	font-family: Arial, sans-serif;"
-		"	line-height: 1.6;"
-		"	color: #333;"
-		"	max-width: 900px;"
-		"	margin: 0 auto;"
-		"}"
-		"h1, h2, h3, h4, h5, h6 {"
-		"	color: #205081;"
-		"	margin-top: 1.5em;"
-		"	margin-bottom: 0.5em;"
-		"}"
-		"code {"
-		"	background-color: #f5f5f5;"
-		"	padding: 2px 4px;"
-		"	border-radius: 3px;"
-		"	font-family: monospace;"
-		"}"
-		"a {"
-		"	color: #3572b0;"
-		"	text-decoration: none;"
-		"}"
-		"a:hover {"
-		"	text-decoration: underline;"
-		"}"
-		"blockquote {"
-		"	border-left: 4px solid #ddd;"
-		"	padding-left: 15px;"
-		"	color: #555;"
-		"}"
-		"img {"
-		"	max-width: 100%%;"
-		"}"
-		"pre {"
-		"	background-color: #f5f5f5;"
-		"	padding: 10px;"
-		"	border-radius: 3px;"
-		"	overflow-x: auto;"
-		"	white-space: pre-wrap;"
-		"	word-wrap: break-word;"
-		"}"
-		"pre code {"
-		"	background-color: transparent;"
-		"	padding: 0;"
-		"	white-space: inherit;"
-		"	display: block;"
-		"}"
-		"ul, ol {"
-		"	padding-left: 20px;"
-		"}"
-		"</style>"
-		"</head>"
-		"<body>"
-		"%s"
-		"</body>"
-		"</html>"), *RawHTML);
 }
 
 FString UMounteaDocumentationSystemStatics::ConvertMarkdownToRichText(const FString& Markdown)
@@ -174,6 +108,26 @@ FString UMounteaDocumentationSystemStatics::ConvertMarkdownToRichText(const FStr
 }
 
 
+
+FString UMounteaDocumentationSystemStatics::RawHTMLToPage(const FString& RawHTML)
+{
+	const auto newStyle = GetDefault<UMounteaDocumentationSystemSettings>();
+	return FString::Printf(TEXT(R"(
+	 <html>
+		  <head>
+				<meta charset='UTF-8'>
+				<title>Mountea Documentation</title>
+				<style>
+				%s
+				</style>
+		  </head>
+		  <body>
+				<main>
+				%s
+				</main>
+		  </body>
+	 </html>)"), *newStyle->DisplayCSS, *RawHTML);
+}
 
 FString UMounteaDocumentationSystemStatics::ConvertMarkdownToHTML(const FString& Markdown) 
 {
@@ -444,8 +398,8 @@ FString UMounteaDocumentationSystemStatics::BuildHTML(const TArray<FString>& Lin
 			
 			while (ListEnd < Lines.Num() && !IsHTMLLine[ListEnd] && 
 				  (Lines[ListEnd].TrimStartAndEnd().StartsWith(TEXT("-")) || 
-				   Lines[ListEnd].TrimStartAndEnd().StartsWith(TEXT("*")) ||
-				   IsOrderedListItem(Lines[ListEnd].TrimStartAndEnd())))
+					Lines[ListEnd].TrimStartAndEnd().StartsWith(TEXT("*")) ||
+					IsOrderedListItem(Lines[ListEnd].TrimStartAndEnd())))
 			{
 				ListEnd++;
 			}
