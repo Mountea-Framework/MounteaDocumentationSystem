@@ -87,7 +87,7 @@ public:
 	
 public:
 
-	UPROPERTY(config, BlueprintReadOnly, EditAnywhere, Category="DisplayStyle", meta=(MultiLine))
+	UPROPERTY(config, BlueprintReadOnly, EditAnywhere, Category="DisplayStyle", meta=(MultiLine=true))
 	FString DisplayCSS;
 
 	UPROPERTY(config, BlueprintReadOnly, EditAnywhere, Category="PreviewFont")

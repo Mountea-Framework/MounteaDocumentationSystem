@@ -69,6 +69,40 @@ public:
 	static bool IsTableSeparator(const FString& Line);
 	static TArray<FString> ParseTableRow(const FString& Line);
 	static FString ProcessTable(const TArray<FString>& Lines, int32& Start, TArray<bool>& IsHTMLLine);
+
+	static bool IsHorizontalRule(const FString& Line);
+	static FString ProcessHorizontalRuleLine(const FString& Line);
+
+	/**
+	 * Creates an HTML link with standard attributes
+	 *
+	 * @param Url The URL to link to
+	 * @param Text The displayed text for the link
+	 * @param Id Optional ID attribute for the link
+	 * @return A string containing the HTML anchor tag
+	 */
+	static FString CreateLink(const FString& Url, const FString& Text, const FString& Id = TEXT(""));
+
+	/**
+	 * Creates an HTML link with a target="_blank" attribute for external links
+	 *
+	 * @param Url The URL to link to
+	 * @param Text The displayed text for the link
+	 * @param Id Optional ID attribute for the link
+	 * @return A string containing the HTML anchor tag with target="_blank"
+	 */
+	static FString CreateExternalLink(const FString& Url, const FString& Text, const FString& Id = TEXT(""));
+
+	/**
+	 * Creates an HTML link with an image inside
+	 *
+	 * @param Url The URL to link to
+	 * @param ImgUrl The URL of the image
+	 * @param AltText The alt text for the image
+	 * @param IsMounteaLink Whether to add data-mountea-link attribute
+	 * @return A string containing the HTML anchor tag with an image
+	 */
+	static FString CreateImageLink(const FString& Url, const FString& ImgUrl, const FString& AltText, bool IsMounteaLink = false);
 	
 };
 
@@ -103,15 +137,25 @@ namespace MounteaMarkdownHTMLPatterns
     
 	// Links and images
 	inline const TCHAR* LinkPattern = TEXT("\\[([^\\]]+?)\\]\\(([^\\)\\s]+)(?:\\s+\"([^\"]+?)\")?\\)");
+	inline const TCHAR* RegularLinkPattern = TEXT("\\[([^!\\[]*)\\]\\(([^\\)]+)\\)");
 	inline const TCHAR* ImagePattern = TEXT("!\\[([^\\]]*?)\\]\\(([^\\)\\s]+)(?:\\s+\"([^\"]+?)\")?\\)");
+	inline const TCHAR* BadgePattern = TEXT("\\[!\\[([^\\]]+)\\]\\(([^\\)]+)\\)\\]\\(([^\\)]+)\\)");
     
 	// Lists
 	inline const TCHAR* UnorderedListPattern = TEXT("^-\\s+(.+)$");
-	inline const TCHAR* OrderedListPattern = TEXT("^\\d+\\.\\s+(.+)$");
+	inline const TCHAR* OrderedListPattern = TEXT("^\\s*\\d+\\.\\s+.*$");
     
 	// Blockquotes
 	inline const TCHAR* BlockquotePattern = TEXT("^>\\s+(.+)$");
     
 	// Horizontal rule
 	inline const TCHAR* HorizontalRulePattern = TEXT("^(?:\\*\\*\\*|---|___)\\s*$");
+	
+	// Alternative formatting
+	inline const TCHAR* UnderscoreBoldPattern = TEXT("__([^_]+)__");
+	inline const TCHAR* UnderscoreItalicPattern = TEXT("_([^_<>]+)_");
+	
+	// Table patterns
+	inline const TCHAR* TableRowPattern = TEXT("\\|.*\\|");
+	inline const TCHAR* TableSeparatorPattern = TEXT("^\\s*\\|(?:\\s*:?-+:?\\s*\\|)+\\s*$");
 }

@@ -197,13 +197,9 @@ void UMounteaDocumentationSystemStatics::IdentifyHTMLBlocks(const TArray<FString
 				FString TagName;
 				int32 SpacePos = TrimmedLine.Find(TEXT(" "));
 				if (SpacePos != INDEX_NONE && SpacePos < TagEnd)
-				{
 					TagName = TrimmedLine.Mid(1, SpacePos - 1);
-				}
 				else
-				{
 					TagName = TrimmedLine.Mid(1, TagEnd - 1);
-				}
 				
 				IsHTMLLine[i] = true;
 				
@@ -218,9 +214,7 @@ void UMounteaDocumentationSystemStatics::IdentifyHTMLBlocks(const TArray<FString
 				FString ClosingTag = FString::Printf(TEXT("</%s>"), *TagName);
 				
 				if (TrimmedLine.Contains(ClosingTag))
-				{
 					continue;
-				}
 				
 				for (int32 j = i + 1; j < Lines.Num(); j++)
 				{
@@ -279,9 +273,7 @@ void UMounteaDocumentationSystemStatics::ProcessCodeBlocks(TArray<FString>& Line
 		else if (InCodeBlock)
 		{
 			if (!CodeBlockContent.IsEmpty())
-			{
 				CodeBlockContent += TEXT("\n");
-			}
 			
 			CodeBlockContent += Lines[i];
 			IsHTMLLine[i] = true;
@@ -301,19 +293,17 @@ FString UMounteaDocumentationSystemStatics::FormatCodeBlock(const FString& Conte
 	SafeContent.ParseIntoArrayLines(ContentLines, false);
 	
 	FString LangClass = Language.IsEmpty() ? TEXT("") : FString::Printf(TEXT(" class=\"language-%s\""), *Language);
-	FString Result = TEXT("<pre>\n");
+	FString Result = TEXT("<codeblock>\n<pre>\n");
 	
 	for (int32 i = 0; i < ContentLines.Num(); i++)
 	{
 		if (i > 0)
-		{
 			Result += TEXT("\n");
-		}
 		
 		Result += FString::Printf(TEXT("\t<code>%s</code>"), *ContentLines[i]);
 	}
 	
-	Result += TEXT("\n</pre>");
+	Result += TEXT("\n</pre>\n</codeblock>");
 	return Result;
 }
 
@@ -395,6 +385,16 @@ FString UMounteaDocumentationSystemStatics::BuildHTML(const TArray<FString>& Lin
 			
 			Result += ProcessHeaderLine(Line) + TEXT("\n");
 		}
+		else if (IsHorizontalRule(Line))
+		{
+			if (InParagraph)
+			{
+				Result += TEXT("</p>\n");
+				InParagraph = false;
+			}
+    
+			Result += ProcessHorizontalRuleLine(Line) + TEXT("\n");
+		}
 		else if ((Line.StartsWith(TEXT("-")) && !Line.Contains(TEXT("|"))) || 
 				 (Line.StartsWith(TEXT("*")) && !Line.Contains(TEXT("|"))) || 
 				 (IsOrderedListItem(Line) && !Line.Contains(TEXT("|"))))
@@ -468,7 +468,7 @@ FString UMounteaDocumentationSystemStatics::ProcessInlineElements(FString Conten
 FString UMounteaDocumentationSystemStatics::ProcessBadgeLine(const FString& Line)
 {
 	// Handle badge-style markdown: [![text](img-url)](link-url)
-	static const FRegexPattern BadgePattern(TEXT("\\[!\\[([^\\]]+)\\]\\(([^\\)]+)\\)\\]\\(([^\\)]+)\\)"));
+	static const FRegexPattern BadgePattern(MounteaMarkdownHTMLPatterns::BadgePattern);
 	FRegexMatcher BadgeMatcher(BadgePattern, Line);
 	
 	if (BadgeMatcher.FindNext())
@@ -477,10 +477,7 @@ FString UMounteaDocumentationSystemStatics::ProcessBadgeLine(const FString& Line
 		const FString ImgUrl = BadgeMatcher.GetCaptureGroup(2);
 		const FString LinkUrl = BadgeMatcher.GetCaptureGroup(3);
 		
-		return FString::Printf(
-			TEXT("<a href=\"%s\" target=\"blank\" rel=\"noopener noreferrer\"><img src=\"%s\" alt=\"%s\" style=\"max-width: 100%%;\"></a>"),
-			*LinkUrl, *ImgUrl, *AltText
-		);
+		return CreateImageLink(LinkUrl, ImgUrl, AltText, false);
 	}
 	
 	return Line;
@@ -488,7 +485,7 @@ FString UMounteaDocumentationSystemStatics::ProcessBadgeLine(const FString& Line
 
 FString UMounteaDocumentationSystemStatics::ProcessBadgeLinks(FString Content)
 {
-	static const FRegexPattern BadgePattern(TEXT("\\[!\\[([^\\]]+)\\]\\(([^\\)]+)\\)\\]\\(([^\\)]+)\\)"));
+	static const FRegexPattern BadgePattern(MounteaMarkdownHTMLPatterns::BadgePattern);
 	FRegexMatcher BadgeMatcher(BadgePattern, Content);
 	
 	TArray<TPair<FString, FString>> Replacements;
@@ -505,10 +502,7 @@ FString UMounteaDocumentationSystemStatics::ProcessBadgeLinks(FString Content)
 			const FString ImgUrl = BadgeMatcher.GetCaptureGroup(2);
 			const FString LinkUrl = BadgeMatcher.GetCaptureGroup(3);
 			
-			FString Replacement = FString::Printf(
-				TEXT("<a href=\"%s\" target=\"blank\" rel=\"noopener noreferrer\" data-mountea-link=\"true\"><img src=\"%s\" alt=\"%s\" style=\"max-width: 100%%;\"></a>"), 
-				*LinkUrl, *ImgUrl, *AltText
-			);
+			FString Replacement = CreateImageLink(LinkUrl, ImgUrl, AltText, true);
 			
 			Replacements.Add(TPair<FString, FString>(WholeMatch, Replacement));
 		}
@@ -526,7 +520,7 @@ FString UMounteaDocumentationSystemStatics::ProcessBadgeLinks(FString Content)
 FString UMounteaDocumentationSystemStatics::ProcessImages(FString Content)
 {
 	// Only process images that aren't already processed as part of badge links
-	static const FRegexPattern ImagePattern(TEXT("!\\[([^\\]]+)\\]\\(([^\\)]+)\\)"));
+	static const FRegexPattern ImagePattern(MounteaMarkdownHTMLPatterns::ImagePattern);
 	FRegexMatcher ImageMatcher(ImagePattern, Content);
 	
 	TArray<TPair<FString, FString>> Replacements;
@@ -569,7 +563,7 @@ FString UMounteaDocumentationSystemStatics::ProcessImages(FString Content)
 FString UMounteaDocumentationSystemStatics::ProcessLinks(FString Content)
 {
 	// Process regular links, but avoid those already processed as badges
-	static const FRegexPattern LinkPattern(TEXT("\\[([^!\\[]*)\\]\\(([^\\)]+)\\)"));
+	static const FRegexPattern LinkPattern(MounteaMarkdownHTMLPatterns::RegularLinkPattern);
 	FRegexMatcher LinkMatcher(LinkPattern, Content);
 	
 	TArray<TPair<FString, FString>> Replacements;
@@ -588,17 +582,10 @@ FString UMounteaDocumentationSystemStatics::ProcessLinks(FString Content)
 			const FString LinkText = LinkMatcher.GetCaptureGroup(1);
 			const FString LinkUrl = LinkMatcher.GetCaptureGroup(2);
 			
-			// Skip if this appears to be part of a badge pattern
 			if (LinkText.Contains(TEXT("![")) || LinkText.StartsWith(TEXT("!")))
-			{
 				continue;
-			}
 			
-			// Include the URL in the console log for debugging
-			FString Replacement = FString::Printf(
-				TEXT("<a href=\"%s\" id=\"doc-link-%d\">%s</a>"), 
-				*LinkUrl, LinkCount, *LinkText
-			);
+			FString Replacement = CreateLink(LinkUrl, LinkText, FString::Printf(TEXT("doc-link-%d"), LinkCount));
 			
 			Replacements.Add(TPair<FString, FString>(WholeMatch, Replacement));
 		}
@@ -615,12 +602,12 @@ FString UMounteaDocumentationSystemStatics::ProcessLinks(FString Content)
 FString UMounteaDocumentationSystemStatics::ProcessTextFormatting(FString Content)
 {
 	Content = ReplacePattern(Content, MounteaMarkdownHTMLPatterns::BoldPattern, TEXT("<strong>$1</strong>"));
-	Content = ReplacePattern(Content, TEXT("__([^_]+)__"), TEXT("<strong>$1</strong>"));
+	Content = ReplacePattern(Content, MounteaMarkdownHTMLPatterns::UnderscoreBoldPattern, TEXT("<strong>$1</strong>"));
 	
 	Content = ReplacePattern(Content, MounteaMarkdownHTMLPatterns::ItalicPattern, TEXT("<em>$1</em>"));
-	Content = ReplacePattern(Content, TEXT("_([^_<>]+)_"), TEXT("<em>$1</em>"));
+	Content = ReplacePattern(Content, MounteaMarkdownHTMLPatterns::UnderscoreItalicPattern, TEXT("<em>$1</em>"));
 	
-	Content = ReplacePattern(Content, TEXT("`([^`]+)`"), TEXT("<code>$1</code>"));
+	Content = ReplacePattern(Content, MounteaMarkdownHTMLPatterns::InlineCodePattern, TEXT("<code>$1</code>"));
 	
 	return Content;
 }
@@ -723,13 +710,13 @@ FString UMounteaDocumentationSystemStatics::ProcessInlineTextForItem(const FStri
 {
 	FString Result = Text;
 
-	Result = ReplacePattern(Result, TEXT("\\*\\*([^\\*]+)\\*\\*"), TEXT("<strong>$1</strong>"));
-	Result = ReplacePattern(Result, TEXT("__([^_]+)__"), TEXT("<strong>$1</strong>"));
+	Result = ReplacePattern(Result, MounteaMarkdownHTMLPatterns::BoldPattern, TEXT("<strong>$1</strong>"));
+	Result = ReplacePattern(Result, MounteaMarkdownHTMLPatterns::UnderscoreBoldPattern, TEXT("<strong>$1</strong>"));
 
-	Result = ReplacePattern(Result, TEXT("\\*([^\\*]+)\\*"), TEXT("<em>$1</em>"));
-	Result = ReplacePattern(Result, TEXT("_([^_]+)_"), TEXT("<em>$1</em>"));
+	Result = ReplacePattern(Result, MounteaMarkdownHTMLPatterns::ItalicPattern, TEXT("<em>$1</em>"));
+	Result = ReplacePattern(Result, MounteaMarkdownHTMLPatterns::UnderscoreItalicPattern, TEXT("<em>$1</em>"));
 
-	Result = ReplacePattern(Result, TEXT("`([^`]+)`"), TEXT("<code>$1</code>"));
+	Result = ReplacePattern(Result, MounteaMarkdownHTMLPatterns::InlineCodePattern, TEXT("<code>$1</code>"));
 	
 	return Result;
 }
@@ -742,7 +729,7 @@ FString UMounteaDocumentationSystemStatics::ProcessBlockquoteLine(const FString&
 
 bool UMounteaDocumentationSystemStatics::IsOrderedListItem(const FString& Line)
 {
-	static const FRegexPattern Pattern(TEXT("^\\s*\\d+\\.\\s+.*$"));
+	static const FRegexPattern Pattern(MounteaMarkdownHTMLPatterns::OrderedListPattern);
 	FRegexMatcher Matcher(Pattern, Line);
 	return Matcher.FindNext();
 }
@@ -766,9 +753,7 @@ bool UMounteaDocumentationSystemStatics::IsTableRow(const FString& Line)
 bool UMounteaDocumentationSystemStatics::IsTableSeparator(const FString& Line)
 {
 	if (!IsTableRow(Line))
-	{
 		return false;
-	}
 	
 	// Process each cell in the separator row
 	TArray<FString> Cells = ParseTableRow(Line);
@@ -778,24 +763,18 @@ bool UMounteaDocumentationSystemStatics::IsTableSeparator(const FString& Line)
 	{
 		FString Trimmed = Cell.TrimStartAndEnd();
 		if (Trimmed.IsEmpty())
-		{
 			continue;
-		}
 		
 		for (int32 i = 0; i < Trimmed.Len(); i++)
 		{
 			TCHAR C = Trimmed[i];
 			if (C != TEXT('-') && C != TEXT(':') && C != TEXT(' '))
-			{
 				return false;
-			}
 		}
 		
 		// Must have at least one dash to be a separator
 		if (!Trimmed.Contains(TEXT("-")))
-		{
 			return false;
-		}
 	}
 	
 	return true;
@@ -853,7 +832,6 @@ FString UMounteaDocumentationSystemStatics::ProcessTable(const TArray<FString>& 
 	
 	Result += TEXT("	</tr>\n  </thead>\n  <tbody>\n");
 	
-	// Process body rows
 	for (int32 i = Start + 2; i < Lines.Num(); i++)
 	{
 		const FString& Line = Lines[i].TrimStartAndEnd();
@@ -876,11 +854,49 @@ FString UMounteaDocumentationSystemStatics::ProcessTable(const TArray<FString>& 
 		
 		Result += TEXT("	</tr>\n");
 		IsHTMLLine[i] = true;
-		Start = i; // Update Start to the last processed line
+		Start = i;
 	}
 	
 	Result += TEXT("  </tbody>\n</table>");
 	IsHTMLLine[Start] = true;
 	
 	return Result;
+}
+
+bool UMounteaDocumentationSystemStatics::IsHorizontalRule(const FString& Line)
+{
+	FString TrimmedLine = Line.TrimStartAndEnd();
+
+	static const FRegexPattern Pattern(MounteaMarkdownHTMLPatterns::HorizontalRulePattern);
+	FRegexMatcher Matcher(Pattern, TrimmedLine);
+	return Matcher.FindNext();
+}
+
+FString UMounteaDocumentationSystemStatics::ProcessHorizontalRuleLine(const FString& Line)
+{
+	return TEXT("<hr>");
+}
+
+FString UMounteaDocumentationSystemStatics::CreateLink(const FString& Url, const FString& Text, const FString& Id)
+{
+	if (Id.IsEmpty())
+		return FString::Printf(TEXT("<a href=\"%s\" target=\"blank\" rel=\"noopener noreferrer\">%s</a>"), *Url, *Text);
+	return FString::Printf(TEXT("<a href=\"%s\" id=\"%s\" target=\"blank\" rel=\"noopener noreferrer\">%s</a>"), *Url, *Id, *Text);
+}
+
+FString UMounteaDocumentationSystemStatics::CreateExternalLink(const FString& Url, const FString& Text, const FString& Id)
+{
+	FString BaseLink;
+	if (Id.IsEmpty())
+		return FString::Printf(TEXT("<a href=\"%s\" target=\"blank\" rel=\"noopener noreferrer\">%s</a>"), *Url, *Text);
+	return FString::Printf(TEXT("<a href=\"%s\" target=\"blank\" rel=\"noopener noreferrer\" id=\"%s\">%s</a>"), *Url, *Id, *Text);
+}
+
+FString UMounteaDocumentationSystemStatics::CreateImageLink(const FString& Url, const FString& ImgUrl, const FString& AltText, bool IsMounteaLink)
+{
+	FString DataAttr = IsMounteaLink ? TEXT(" data-mountea-link=\"true\"") : TEXT("");
+	FString ImgTag = FString::Printf(TEXT("<img src=\"%s\" alt=\"%s\" style=\"max-width: 100%%;\">"), *ImgUrl, *AltText);
+    
+	return FString::Printf(TEXT("<a href=\"%s\" target=\"blank\" rel=\"noopener noreferrer\"%s>%s</a>"), 
+		*Url, *DataAttr, *ImgTag);
 }
