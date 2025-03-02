@@ -58,6 +58,8 @@ public:
 	static FString ProcessBadgeLinks(FString Content);
 	static FString ProcessImages(FString Content);
 	static FString ProcessLinks(FString Content);
+	static FString ProcessImageLine(const FString& Line);
+	static FString ProcessLinkLine(const FString& Line);
 	static FString ProcessTextFormatting(FString Content);
 	static FString ReplacePattern(const FString& Content, const FString& Pattern, const FString& Replacement);
 	static FString ProcessHeaderLine(const FString& Line);

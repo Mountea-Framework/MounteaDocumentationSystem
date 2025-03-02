@@ -139,12 +139,30 @@ FString UMounteaDocumentationSystemStatics::ConvertMarkdownToHTML(const FString&
 	IsHTMLLine.Init(false, Lines.Num());
 	IdentifyHTMLBlocks(Lines, IsHTMLLine);
 	
-	// Stage 3: Process badges first (high priority)
+	// Stage 3: Process badges, images, and links (high priority)
 	for (int32 i = 0; i < Lines.Num(); i++)
 	{
-		if (!IsHTMLLine[i] && Lines[i].TrimStartAndEnd().StartsWith(TEXT("[![")))
+		if (IsHTMLLine[i])
+			continue;
+        
+		FString TrimmedLine = Lines[i].TrimStartAndEnd();
+    
+		// Process badge-style markdown: [![text](img-url)](link-url)
+		if (TrimmedLine.StartsWith(TEXT("[![")) && TrimmedLine.Contains(TEXT("](")) && TrimmedLine.Contains(TEXT(")](")))
 		{
 			Lines[i] = ProcessBadgeLine(Lines[i]);
+			IsHTMLLine[i] = true;
+		}
+		// Process regular images: ![text](img-url)
+		else if (TrimmedLine.StartsWith(TEXT("![")) && TrimmedLine.Contains(TEXT("](")))
+		{
+			Lines[i] = ProcessImageLine(Lines[i]);
+			IsHTMLLine[i] = true;
+		}
+		// Process standalone links: [text](url)
+		else if (TrimmedLine.StartsWith(TEXT("[")) && TrimmedLine.Contains(TEXT("](")) && TrimmedLine.EndsWith(TEXT(")")))
+		{
+			Lines[i] = ProcessLinkLine(Lines[i]);
 			IsHTMLLine[i] = true;
 		}
 	}
@@ -597,6 +615,45 @@ FString UMounteaDocumentationSystemStatics::ProcessLinks(FString Content)
 	}
 	
 	return Content;
+}
+
+FString UMounteaDocumentationSystemStatics::ProcessImageLine(const FString& Line)
+{
+	// Handle standalone image markdown: ![text](img-url)
+	static const FRegexPattern ImagePattern(MounteaMarkdownHTMLPatterns::ImagePattern);
+	FRegexMatcher ImageMatcher(ImagePattern, Line);
+    
+	if (ImageMatcher.FindNext())
+	{
+		const FString AltText = ImageMatcher.GetCaptureGroup(1);
+		const FString ImgUrl = ImageMatcher.GetCaptureGroup(2);
+        
+		return FString::Printf(TEXT("<img src=\"%s\" alt=\"%s\" style=\"max-width: 100%%;\">"), 
+			*ImgUrl, *AltText);
+	}
+    
+	return Line;
+}
+
+FString UMounteaDocumentationSystemStatics::ProcessLinkLine(const FString& Line)
+{
+	// Handle standalone link markdown: [text](url)
+	static const FRegexPattern LinkPattern(MounteaMarkdownHTMLPatterns::RegularLinkPattern);
+	FRegexMatcher LinkMatcher(LinkPattern, Line);
+    
+	if (LinkMatcher.FindNext())
+	{
+		const FString LinkText = LinkMatcher.GetCaptureGroup(1);
+		const FString LinkUrl = LinkMatcher.GetCaptureGroup(2);
+        
+		// Skip if this appears to be part of a badge pattern
+		if (LinkText.Contains(TEXT("![")) || LinkText.StartsWith(TEXT("!")))
+			return Line;
+        
+		return CreateLink(LinkUrl, LinkText, TEXT(""));
+	}
+    
+	return Line;
 }
 
 FString UMounteaDocumentationSystemStatics::ProcessTextFormatting(FString Content)
