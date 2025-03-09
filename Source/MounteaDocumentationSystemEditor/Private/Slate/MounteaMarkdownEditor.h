@@ -40,6 +40,7 @@ protected:
 	
 	void ConvertMarkdownToRichText() const;
 	void ConvertMarkdownToHTMLText() const;
+	void ConvertMarkdownToHTMLTextOnline() const;
 };
 
 

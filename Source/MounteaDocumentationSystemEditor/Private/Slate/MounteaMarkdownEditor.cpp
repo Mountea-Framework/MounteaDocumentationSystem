@@ -2,9 +2,15 @@
 
 #include "MounteaMarkdownEditor.h"
 
+#include "HttpModule.h"
 #include "MounteaMarkdownTextEditor.h"
 #include "Core/MounteaDocumentationPage.h"
+#include "Dom/JsonObject.h"
 #include "Fonts/FontMeasure.h"
+#include "Interfaces/IHttpRequest.h"
+#include "Interfaces/IHttpResponse.h"
+#include "Serialization/JsonSerializer.h"
+#include "Serialization/JsonWriter.h"
 #include "Settings/MounteaDocumentationSystemEditorSettings.h"
 #include "Statics/MounteaDocumentationSystemStatics.h"
 
@@ -152,7 +158,8 @@ void SMounteaMarkdownEditor::HandleChildTextChanged(const FText& NewText)
 {
 	SetText(NewText);
 	
-	ConvertMarkdownToHTMLText();
+	//ConvertMarkdownToHTMLText();
+	ConvertMarkdownToHTMLTextOnline();
 }
 
 void SMounteaMarkdownEditor::ConvertMarkdownToRichText() const
@@ -176,4 +183,43 @@ void SMounteaMarkdownEditor::ConvertMarkdownToHTMLText() const
 	const FString newHTML = UMounteaDocumentationSystemStatics::RawHTMLToPage(newRawHTML);
 
 	EditedPage->TranslatedPageContent = FText::FromString(newHTML);
+}
+
+void SMounteaMarkdownEditor::ConvertMarkdownToHTMLTextOnline() const
+{
+	if (!EditedPage.IsValid()) return;
+
+	FString text = EditedPage->PageContent.ToString();
+	
+	TSharedPtr<FJsonObject> JsonObject = MakeShareable(new FJsonObject);
+	JsonObject->SetStringField(TEXT("text"), text);
+	JsonObject->SetStringField(TEXT("mode"), TEXT("markdown"));
+
+	FString RequestBody;
+	TSharedRef<TJsonWriter<>> Writer = TJsonWriterFactory<>::Create(&RequestBody);
+	FJsonSerializer::Serialize(JsonObject.ToSharedRef(), Writer);
+
+	TSharedRef<IHttpRequest, ESPMode::ThreadSafe> Request = FHttpModule::Get().CreateRequest();
+	Request->SetURL(TEXT("https://api.github.com/markdown"));
+	Request->SetVerb(TEXT("POST"));
+	Request->SetHeader(TEXT("Content-Type"), TEXT("application/json"));
+	Request->SetHeader(TEXT("User-Agent"), TEXT("MounteaDocumentationSystem"));
+	Request->SetContentAsString(RequestBody);
+
+	Request->OnProcessRequestComplete().BindLambda([this](FHttpRequestPtr Request, const FHttpResponsePtr& Response, bool bSuccess)
+	{
+		if (bSuccess && Response.IsValid())
+		{
+			FString HtmlResponse = Response->GetContentAsString();
+			const FString newHTML = UMounteaDocumentationSystemStatics::RawHTMLToPage(HtmlResponse);
+			EditedPage->TranslatedPageContent = FText::FromString(newHTML);
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("Markdown conversion failed!"));
+			ConvertMarkdownToHTMLText();
+		}
+	});
+
+	Request->ProcessRequest();
 }

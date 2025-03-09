@@ -32,6 +32,8 @@ public class MounteaDocumentationSystemEditor : ModuleRules
 				
 				"PropertyEditor",
 				"WebBrowser",
+				"HTTP",
+				"Json",
 				
 				"MounteaDocumentationSystem"
 			});

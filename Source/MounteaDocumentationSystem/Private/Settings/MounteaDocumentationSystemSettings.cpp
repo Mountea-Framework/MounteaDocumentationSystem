@@ -42,120 +42,126 @@ void UMounteaDocumentationSystemSettings::SetDefaultTextTypes()
 void UMounteaDocumentationSystemSettings::SetDefaultCSS()
 {
 	DisplayCSS = R"(
-	html,
-      body {
-        height: 100%;
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-      }
+html,
+body {
+	height: 100%;
+	margin: 0;
+	padding: 0;
+	box-sizing: border-box;
+}
 
-      body {
-        font-family: Arial, sans-serif;
-        line-height: 1.6;
-        color: #333;
-        max-width: 100%;
-        overflow: hidden;
-        display: flex;
-        flex-direction: column;
-        padding: 20px 0 0 20px;
-      }
+body {
+	font-family: Arial, sans-serif;
+	line-height: 1.6;
+	color: #333;
+	max-width: 100%;
+	overflow: hidden;
+	display: flex;
+	flex-direction: column;
+	padding: 20px 0 0 20px;
+}
 
-      main {
-        flex: 1;
-        overflow-y: auto;
-      }
+main {
+	flex: 1;
+	overflow-y: auto;
+}
 
-      h1,
-      h2,
-      h3,
-      h4,
-      h5,
-      h6 {
-        color: #3d3d3d;
-        margin-top: 1.5em;
-        margin-bottom: 0.1em;
-      }
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+	color: #3d3d3d;
+	margin-top: 1.5em;
+	margin-bottom: 0.1em;
+}
 
-      code {
-        background-color: #f5f5f5;
-        padding: 2px 4px;
-        border-radius: 3px;
-        font-family: monospace;
-      }
+a {
+	color: #3572b0;
+	text-decoration: none;
+}
 
-      a {
-        color: #3572b0;
-        text-decoration: none;
-      }
+a:hover {
+	text-decoration: underline;
+}
 
-      a:hover {
-        text-decoration: underline;
-      }
+blockquote {
+	border-left: 4px solid #ddd;
+	padding-left: 15px;
+	color: #555;
+}
 
-      blockquote {
-        border-left: 4px solid #ddd;
-        padding-left: 15px;
-        color: #555;
-      }
+img {
+	max-width: 100%;
+}
 
-      img {
-        max-width: 100%;
-      }
+pre {
+	font-family: "Courier New", monospace;
+	background-color: #282c34;
+	color: #abb2bf;
+	padding: 12px;
+	border-radius: 5px;
+	display: grid !important;
+	white-space: pre !important;
+	overflow-x: auto !important;
+	word-wrap: normal !important;
+}
 
-      pre {
-        background-color: #f5f5f5;
-        padding: 10px;
-        border-radius: 3px;
-        overflow-x: auto;
-        white-space: pre-wrap;
-        word-wrap: break-word;
-      }
+pre span {
+	display: block !important;
+	white-space: pre !important;
+}
 
-      pre code {
-        background-color: transparent;
-        padding: 0;
-        white-space: inherit;
-        display: block;
-      }
+code {
+	font-family: "Courier New", monospace;
+	font-size: 14px;
+	tab-size: 4;
+}
 
-      ul,
-      ol {
-        padding-left: 20px;
-      }
+.highlight pre
+.highlight span {
+	display: block !important;
+	white-space: pre !important;
+}
 
-      .mountea-markdown-table {
-        border-collapse: collapse;
-        width: 100%;
-        margin: 1em 0;
-      }
+ul,
+ol {
+	padding-left: 20px;
+}
 
-      .mountea-markdown-table th,
-      .mountea-markdown-table td {
-        border: 1px solid #ddd;
-        padding: 8px;
-        text-align: left;
-      }
+.mountea-markdown-table {
+	border-collapse: collapse;
+	width: 100%;
+	margin: 1em 0;
+}
 
-      .mountea-markdown-table th {
-        background-color: #f2f2f2;
-        font-weight: bold;
-      }
+.mountea-markdown-table th,
+.mountea-markdown-table td {
+	border: 1px solid #ddd;
+	padding: 8px;
+	text-align: left;
+}
 
-      .mountea-markdown-table tr:nth-child(even) {
-        background-color: #f9f9f9;
-      }
-	)";
+.mountea-markdown-table th {
+	background-color: #f2f2f2;
+	font-weight: bold;
+}
+
+.mountea-markdown-table tr:nth-child(even) {
+	background-color: #f9f9f9;
+}
+)";
 }
 
 FSlateFontInfo UMounteaDocumentationSystemSettings::GetFont(const FName& Type) const
 {
 	if (!FontMappings.Contains(Type))
-		return  FCoreStyle::GetDefaultFontStyle("Regular", 14);
+		return	FCoreStyle::GetDefaultFontStyle("Regular", 14);
 
 	auto fontConfig = FontMappings.Find(Type);
 	if (!fontConfig->PreviewFont.FontObject)
-		return  FCoreStyle::GetDefaultFontStyle("Regular", 12);
+		return	FCoreStyle::GetDefaultFontStyle("Regular", 12);
 	
 	return fontConfig->PreviewFont;
 }
@@ -194,7 +200,7 @@ void UMounteaDocumentationSystemSettings::RefreshPreviewFonts()
 void UMounteaDocumentationSystemSettings::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
 {
 	Super::PostEditChangeProperty(PropertyChangedEvent);
-   
+	 
 	if (PropertyChangedEvent.GetPropertyName() == GET_MEMBER_NAME_CHECKED(UMounteaDocumentationSystemSettings, FontMappings))
 	{
 		RefreshPreviewFonts();
