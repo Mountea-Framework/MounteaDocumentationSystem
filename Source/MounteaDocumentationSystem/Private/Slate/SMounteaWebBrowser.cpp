@@ -1,9 +1,5 @@
 ﻿// All rights reserved Dominik Morse 2024
 
-// All rights reserved Dominik Morse 2024
-
-// All rights reserved Dominik Morse 2024
-
 #include "Slate/SMounteaWebBrowser.h"
 
 void SMounteaWebBrowser::Construct(const FArguments& InArgs)
@@ -11,6 +7,7 @@ void SMounteaWebBrowser::Construct(const FArguments& InArgs)
 	URLAttribute = InArgs._URL;
 	LastLoadedURL = FString();
 	OnLinkClicked = InArgs._OnLinkClicked;
+	OnContentChanged = InArgs._OnContentChanged;
 	bInitialScriptInjected = false;
 	bPendingReloadInjection = false;
 	TimeSinceConstruction = 0.0;
@@ -44,7 +41,7 @@ void SMounteaWebBrowser::Tick(const FGeometry& AllottedGeometry, const double In
 		TimeSinceConstruction += InDeltaTime;
 		if (TimeSinceConstruction >= 2.0)
 		{
-			InjectLinkClickScript();
+			InjectScripts();
 			bInitialScriptInjected = true;
 		}
 	}
@@ -69,15 +66,14 @@ void SMounteaWebBrowser::Tick(const FGeometry& AllottedGeometry, const double In
 		TimeSinceReload += InDeltaTime;
 		if (TimeSinceReload >= 1.0)
 		{
-			InjectLinkClickScript();
+			InjectScripts();
 			bPendingReloadInjection = false;
 		}
 	}
 }
 
-void SMounteaWebBrowser::InjectLinkClickScript()
+void SMounteaWebBrowser::ClearLinkHandlerScript()
 {
-	// First, clear any existing handler
 	FString ClearScript = R"(
 		try {
 			if (window.mounteaLinkHandler) {
@@ -91,56 +87,137 @@ void SMounteaWebBrowser::InjectLinkClickScript()
 	)";
 	
 	ExecuteJavascript(ClearScript);
-	
-	// Then inject the new handler
-	FString Script = R"(
-		window.mounteaLinkHandler = function(event) {
-			let target = event.target;
-			while (target && target.tagName !== 'A' && target.parentElement) {
-				target = target.parentElement;
-			}
+}
 
-			if (target && target.tagName === 'A') {
-				console.log('MOUNTEA_LINK_CLICKED:' + target.href);
-				event.preventDefault();
-				event.stopPropagation();
-				return false;
-			}
-		};
+void SMounteaWebBrowser::CreateLinkHandlerScript()
+{
+	FString LinkScript = R"(
+		try {
+			window.mounteaLinkHandler = function(event) {
+				let target = event.target;
+				while (target && target.tagName !== 'A' && target.parentElement) {
+					target = target.parentElement;
+				}
 
-		document.addEventListener('click', window.mounteaLinkHandler, true);
-		console.log('Mountea link handler injected');
+				if (target && target.tagName === 'A') {
+					console.log('MOUNTEA_LINK_CLICKED:' + target.href);
+					event.preventDefault();
+					event.stopPropagation();
+				}
+			};
+
+			document.addEventListener('click', window.mounteaLinkHandler, true);
+			console.log('Mountea link handler injected');
+		} catch (e) {
+			console.log('Error in link handler:', e);
+		}
 	)";
 
-	ExecuteJavascript(Script);
+	ExecuteJavascript(LinkScript);
+}
+
+void SMounteaWebBrowser::CreateInputConsumeScript()
+{
+    // This script preserves the styling while setting up the editor
+    FString Script = R"(
+console.log('Script injected - checking styles');
+
+// Log all stylesheets and styles for debugging
+var styles = document.styleSheets;
+console.log('Style sheets found:', styles.length);
+
+for (var i = 0; i < styles.length; i++) {
+    try {
+        console.log('Style sheet', i, ':', styles[i]);
+    } catch (e) {
+        console.log('Error accessing stylesheet', i);
+    }
+}
+
+// Get the editor element
+var editor = document.getElementById('text-editor');
+if (editor) {
+    console.log('Found editor element');
+    console.log('Editor classes:', editor.className);
+    console.log('Line numbers element:', !!document.getElementById('line-numbers'));
+    
+    // Setup input handler with debugging
+    editor.addEventListener('input', function() {
+        console.log('Input event fired');
+        console.log('MOUNTEA_CONTENT_CHANGED:' + editor.value);
+    });
+    
+    // Setup content setting function
+    window.setContent = function(content) {
+        editor.value = content;
+        console.log('Content set, length:', content.length);
+        
+        // Update line numbers if function exists
+        if (window.updateLineNumbers) {
+            window.updateLineNumbers();
+        }
+        
+        return true;
+    };
+    
+    // Setup line numbering function if it doesn't exist
+    if (!window.updateLineNumbers) {
+        window.updateLineNumbers = function() {
+            var lineNumbers = document.getElementById('line-numbers');
+            if (lineNumbers) {
+                var lines = editor.value.split('\n');
+                var html = '';
+                for (var i = 1; i <= lines.length; i++) {
+                    html += i + '<br>';
+                }
+                lineNumbers.innerHTML = html;
+                console.log('Line numbers updated:', lines.length);
+            }
+        };
+        
+        // Initial line numbers
+        window.updateLineNumbers();
+        
+        // Set up automatic line number updates on input
+        editor.addEventListener('input', window.updateLineNumbers);
+    }
+} else {
+    console.log('Editor element not found - DOM may not be fully loaded');
+}
+)";
+
+    ExecuteJavascript(Script);
+}
+
+void SMounteaWebBrowser::InjectScripts()
+{
+	// Clear any existing handlers
+	ClearLinkHandlerScript();
+	
+	// Link handler
+	CreateLinkHandlerScript();
+	
+	// Editor functionality
+	CreateInputConsumeScript();
 }
 
 void SMounteaWebBrowser::HandleConsoleMessage(const FString& Message, const FString& Source, int32 Line, EWebBrowserConsoleLogSeverity Severity)
 {
-	const FString Prefix = TEXT("MOUNTEA_LINK_CLICKED:");
-	if (Message.StartsWith(Prefix))
+	// Add debug logging
+	UE_LOG(LogTemp, Log, TEXT("WebBrowser console: %s"), *Message);
+	
+	const FString LinkPrefix = TEXT("MOUNTEA_LINK_CLICKED:");
+	const FString ContentPrefix = TEXT("MOUNTEA_CONTENT_CHANGED:");
+	
+	if (Message.StartsWith(LinkPrefix))
 	{
-		FString URL = Message.RightChop(Prefix.Len());
-		OnLinkClickedInternal(URL);
+		const FString URL = Message.RightChop(LinkPrefix.Len());
+		OnLinkClicked.Execute(FText::FromString(URL));
 	}
-}
-
-void SMounteaWebBrowser::OnLinkClickedInternal(const FString& ClickedURL)
-{
-	if (OnLinkClicked.IsBound())
-		OnLinkClicked.Execute(FText::FromString(ClickedURL));
-
-	if (ClickedURL.StartsWith("mountea://"))
+	else if (Message.StartsWith(ContentPrefix) && OnContentChanged.IsBound())
 	{
-		// Handle internal protocol links
-		FString ResourcePath = ClickedURL.RightChop(10);
-		UE_LOG(LogTemp, Error, TEXT("Internal link to resource: %s"), *ResourcePath);
-		
-		// TODO: Handle the internal resource link
-	}
-	else if (ClickedURL.StartsWith("http://") || ClickedURL.StartsWith("https://"))
-	{
-		// External URL - open in system browser
-		FPlatformProcess::LaunchURL(*ClickedURL, nullptr, nullptr);
+		const FString Content = Message.RightChop(ContentPrefix.Len());
+		UE_LOG(LogTemp, Warning, TEXT("Content changed detected: %s"), *Content.Left(20));
+		OnContentChanged.Execute(Content);
 	}
 }

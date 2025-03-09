@@ -7,6 +7,7 @@
 #include "Widgets/DeclarativeSyntaxSupport.h"
 
 DECLARE_DELEGATE_OneParam(FOnLinkClickedDelegate, const FText&);
+DECLARE_DELEGATE_OneParam(FOnContentChangedDelegate, const FString&);
 
 class MOUNTEADOCUMENTATIONSYSTEM_API SMounteaWebBrowser : public SWebBrowser
 {
@@ -38,21 +39,27 @@ public:
 		SLATE_EVENT(FOnLoadUrl, OnLoadUrl)
 		SLATE_ARGUMENT(int, BrowserFps)
 		SLATE_EVENT(FOnLinkClickedDelegate, OnLinkClicked)
+		SLATE_EVENT(FOnContentChangedDelegate, OnContentChanged)
 	SLATE_END_ARGS()
 
 	void Construct(const FArguments& InArgs);
 	virtual void Tick(const FGeometry& AllottedGeometry, const double InCurrentTime, const float InDeltaTime) override;
+	void ClearLinkHandlerScript();
+	void CreateLinkHandlerScript();
+	void CreateInputConsumeScript();
 
-	void InjectLinkClickScript();
+	void InjectScripts();
 	void HandleConsoleMessage(const FString& Message, const FString& Source, int32 Line, EWebBrowserConsoleLogSeverity Severity);
-	void OnLinkClickedInternal(const FString& ClickedURL);
 
 private:
 	TAttribute<FText> URLAttribute;
 	FString LastLoadedURL;
-	FOnLinkClickedDelegate OnLinkClicked;
+	
 	bool bInitialScriptInjected = false;
 	bool bPendingReloadInjection = false;
 	float TimeSinceConstruction = 0;
 	float TimeSinceReload = 0;
+
+	FOnLinkClickedDelegate OnLinkClicked;
+	FOnContentChangedDelegate OnContentChanged;
 };

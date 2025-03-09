@@ -171,24 +171,12 @@ TSharedRef<SDockTab> FMounteaDocumentationPageEditor::SpawnMarkdownTab(const FSp
 			+ SHorizontalBox::Slot()
 			.FillWidth(0.5f)
 			[
-				SNew(SScrollBox)
-				.Orientation(Orient_Vertical)
-
-				+ SScrollBox::Slot()
+				SNew(SBorder)
+				.Padding(0) //10
+				.BorderBackgroundColor(FLinearColor::Transparent)
 				[
-					SNew(SHorizontalBox)
-
-					+ SHorizontalBox::Slot()
-					.FillWidth(0.5f)
-					[
-						SNew(SBorder)
-						.Padding(10)
-						.BorderBackgroundColor(FLinearColor::Transparent)
-						[
-							SNew(SMounteaMarkdownEditor)
-							.EditedPage(EditedPage)
-						]
-					]
+					SNew(SMounteaMarkdownEditor)
+					.EditedPage(EditedPage)
 				]
 			]
 
@@ -207,6 +195,22 @@ TSharedRef<SDockTab> FMounteaDocumentationPageEditor::SpawnMarkdownTab(const FSp
 					.URL_Lambda([this]() -> FText { 
 						return IsValid(EditedPage) ? EditedPage->TranslatedPageContent : FText::GetEmpty(); 
 					})
+					.OnLinkClicked(FOnLinkClickedDelegate::CreateLambda([this](const FText& ClickedURL)
+					{
+						FString URL = ClickedURL.ToString();
+						if (URL.StartsWith("mountea://"))
+						{
+							// Handle internal protocol links
+							FString ResourcePath = URL.RightChop(10);
+							UE_LOG(LogTemp, Error, TEXT("Internal link to resource: %s"), *ResourcePath);
+						}
+						else if (URL.StartsWith("http://") || URL.StartsWith("https://"))
+						{
+							// External URL
+							UE_LOG(LogTemp, Error, TEXT("Web link: %s"), *URL);
+							FPlatformProcess::LaunchURL(*URL, nullptr, nullptr);
+						}
+					}))
 				]
 			]
 		]

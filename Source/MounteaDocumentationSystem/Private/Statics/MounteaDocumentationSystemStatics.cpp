@@ -110,6 +110,26 @@ FString UMounteaDocumentationSystemStatics::ConvertMarkdownToRichText(const FStr
 
 FString UMounteaDocumentationSystemStatics::RawHTMLToPage(const FString& RawHTML)
 {
+	FString ProcessedHTML = RawHTML;
+	static const FRegexPattern CodeBlockPattern(TEXT("<div class=[\"']highlight highlight-source[^\"']*[\"']>\\s*<pre>(.*?)</pre>\\s*</div>"));
+	FRegexMatcher CodeBlockMatcher(CodeBlockPattern, ProcessedHTML);
+	
+	TArray<TPair<FString, FString>> Replacements;
+	
+	while (CodeBlockMatcher.FindNext())
+	{
+		const FString FullMatch = CodeBlockMatcher.GetCaptureGroup(0);
+		const FString CodeContent = CodeBlockMatcher.GetCaptureGroup(1);
+		FString Replacement = FString::Printf(TEXT("<pre style=\"display:grid;\">%s</pre>"), *CodeContent);
+			
+		Replacements.Add(TPair<FString, FString>(FullMatch, Replacement));
+	}
+	
+	for (const auto& Pair : Replacements)
+	{
+		ProcessedHTML = ProcessedHTML.Replace(*Pair.Key, *Pair.Value, ESearchCase::CaseSensitive);
+	}
+	
 	const auto newStyle = GetDefault<UMounteaDocumentationSystemSettings>();
 	return FString::Printf(TEXT(R"(
 	<html>
@@ -120,7 +140,22 @@ FString UMounteaDocumentationSystemStatics::RawHTMLToPage(const FString& RawHTML
 		  <script src='https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js'></script>
 		  <script>
 			document.addEventListener("DOMContentLoaded", function() {
-				document.querySelectorAll("pre code").forEach(el => hljs.highlightElement(el));
+				// Apply layout fixes to GitHub's code blocks
+				document.querySelectorAll(".highlight pre, .highlight-source-c\\+\\+ pre").forEach(el => {
+					el.style.display = "grid";
+					el.style.whiteSpace = "pre";
+				});
+				
+				// Make all spans in code blocks block-level
+				document.querySelectorAll(".highlight span, .highlight-source-c\\+\\+ span").forEach(el => {
+					el.style.display = "block";
+					el.style.whiteSpace = "pre";
+				});
+				
+				// Apply syntax highlighting
+				document.querySelectorAll("pre code").forEach(el => {
+					hljs.highlightElement(el);
+				});
 			});
 		  </script>
 		  <style>%s</style>
@@ -128,7 +163,7 @@ FString UMounteaDocumentationSystemStatics::RawHTMLToPage(const FString& RawHTML
 		<body>
 		  <main>%s</main>
 		</body>
-	</html>)"), *newStyle->DisplayCSS, *RawHTML);
+	</html>)"), *newStyle->DisplayCSS, *ProcessedHTML);
 }
 
 FString UMounteaDocumentationSystemStatics::ConvertMarkdownToHTML(const FString& Markdown) 

@@ -5,6 +5,8 @@
 #include "CoreMinimal.h"
 #include "Widgets/SCompoundWidget.h"
 
+class SMounteaWebBrowser;
+class SMounteaMarkdownWebTextEditor;
 class SMounteaMarkdownTextEditor;
 
 class SMounteaMarkdownEditor : public SCompoundWidget
@@ -24,19 +26,17 @@ public:
 
 	FText GetText() const;
 	void SetText(const FText& NewText);
-	FText GetLineNumbers() const;
-
-	FSlateFontInfo GetEditorFont() const;
-	FSlateColor GetLineNumberColor() const;
-	int32 CalculateManualWrappedLineCount() const;
 
 private:
 	TWeakObjectPtr<class UMounteaDocumentationPage> EditedPage;
-	TSharedPtr<SMounteaMarkdownTextEditor> EditableTextWidget;
+	TSharedPtr<SMounteaWebBrowser> WebEditorWidget;
 
 protected:
 
+	double lastTime = 0.f;
+	
 	void HandleChildTextChanged(const FText& NewText);
+	void HandleContentChanged(const FString& NewContent);
 	
 	void ConvertMarkdownToRichText() const;
 	void ConvertMarkdownToHTMLText() const;

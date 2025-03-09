@@ -26,7 +26,6 @@ void SMounteaMarkdownTextEditor::Construct(const FArguments& InArgs)
 		})
 		.Font(InArgs._EditorFont)
 		.OnKeyDownHandler(this, &SMounteaMarkdownTextEditor::HandleTabPress)
-		//.Marshaller(MarkdownMarshaller) // TODO: Disabled input!
 	);
 }
 
