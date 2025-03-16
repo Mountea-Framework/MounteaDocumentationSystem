@@ -26,13 +26,13 @@ const FString dummyURL = R"(
 	<script src="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.js"></script>
 	<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 	<style>
-		html, body { 
-			height: 100%; 
-			margin: 0; 
-			padding: 0; 
-			overflow: hidden; 
+		html, body {
+			height: 100%;
+			margin: 0;
+			padding: 0;
+			overflow: hidden;
+			background-color: #1e1e1e;
 			font-family: 'Courier New', monospace;
-			background-color: #f6f6f6;
 		}
 		
 		#editor-container { 
