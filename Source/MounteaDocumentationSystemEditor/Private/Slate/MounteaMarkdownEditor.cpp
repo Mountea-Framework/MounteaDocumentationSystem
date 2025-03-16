@@ -32,6 +32,7 @@ const FString dummyURL = R"(
 			padding: 0; 
 			overflow: hidden; 
 			font-family: 'Courier New', monospace;
+			background-color: #f6f6f6;
 		}
 		
 		#editor-container { 
@@ -52,6 +53,8 @@ const FString dummyURL = R"(
 		.CodeMirror, .CodeMirror-scroll, .CodeMirror pre, .editor-preview { 
 			font-family: 'Courier New', monospace !important;
 			font-size: 14px !important;
+			background-color: #202121;
+			color: #d4d4d4;
 		}
 		
 		.CodeMirror { 
@@ -66,6 +69,32 @@ const FString dummyURL = R"(
 		
 		.editor-preview code, .editor-preview pre {
 			font-family: 'Courier New', monospace !important;
+		}
+
+		.editor-statusbar {
+				display: none;
+		}
+
+		.CodeMirror-cursor {
+				border-left: 2px solid #d4d4d4 !important;
+		}
+
+		.CodeMirror .cm-selection-background {
+		    background-color: rgba(212, 212, 212, 0.3) !important;
+		}
+
+		.CodeMirror .cm-selection {
+		    color: #d4d4d4 !important;
+		}
+
+		.CodeMirror-selectedtext {
+			color: #d4d4d4 !important;
+			background-color: rgba(212, 212, 212, 0.3) !important;
+		}
+
+		::selection {
+		    background-color: rgba(212, 212, 212, 0.3);
+		    color: #d4d4d4;
 		}
 
 		::-webkit-scrollbar {
@@ -91,9 +120,35 @@ const FString dummyURL = R"(
 		var simplemde = new SimpleMDE({ 
 			element: document.getElementById("editor"),
 			spellChecker: false,
+			toolbar: [
+				{
+					name: "bold",
+					action: SimpleMDE.toggleBold,
+					className: "fa fa-bold",
+					title: "Bold"
+				},
+				{
+					name: "italic",
+					action: SimpleMDE.toggleItalic,
+					className: "fa fa-italic",
+					title: "Italic"
+				},
+				{
+					name: "heading",
+					action: SimpleMDE.toggleHeadingSmaller,
+					className: "fa fa-header",
+					title: "Heading"
+				},
+				{
+					name: "unordered-list",
+					action: SimpleMDE.toggleUnorderedList,
+					className: "fa fa-list",
+					title: "Unordered List"
+				}
+			],
 			toolbar: false
 		});
-		
+
 		window.setContent = function(content) {
 			simplemde.value(content);
 			return true;
@@ -103,54 +158,34 @@ const FString dummyURL = R"(
 			console.log("MOUNTEA_CONTENT_CHANGED:" + simplemde.value());
 		});
 		
-		window.convertToHTML = function() {
-			var content = simplemde.value();			
-			try {
-				var processedMarkdown = content.replace(/```([a-z]*)\n([\s\S]*?)\n```/g, function(match, language, codeContent) {
-					var escaped = codeContent
-						.replace(/&/g, '&amp;')
-						.replace(/</g, '&lt;')
-						.replace(/>/g, '&gt;')
-						.replace(/"/g, '&quot;')
-						.replace(/'/g, '&#39;');
-					
-					return '<pre><code class="language-' + language + '">' + 
-						   escaped.split('\n').map(function(line) {
-							   return '<span>' + line + '</span>';
-						   }).join('\n') + 
-						   '</code></pre>';
-				});
+	window.convertToHTML = function() {
+		var content = simplemde.value();
+		
+		try {
+			var processedContent = content.replace(/```([a-z]*)\n([\s\S]*?)\n```/g, function(match, language, codeContent) {
+				var escaped = codeContent
+					.replace(/&/g, '&amp;')
+					.replace(/</g, '&lt;')
+					.replace(/>/g, '&gt;')
+					.replace(/"/g, '&quot;')
+					.replace(/'/g, '&#39;');
 				
-				var html = marked.parse(processedMarkdown, {
-					breaks: false,
-					gfm: true,
-					sanitize: false
-				});
-				
-				console.log("MOUNTEA_HTML_GENERATED:" + html);
-				return html;
-			} catch (e) {
-				console.error("MOUNTEA_INFO:Error:", e);
-				
-				var fallbackHtml = content.replace(/```([a-z]*)\n([\s\S]*?)\n```/g, function(match, language, codeContent) {
-					var escaped = codeContent
-						.replace(/&/g, '&amp;')
-						.replace(/</g, '&lt;')
-						.replace(/>/g, '&gt;')
-						.replace(/"/g, '&quot;')
-						.replace(/'/g, '&#39;');
-					
-					return '<pre><code class="language-' + language + '">' + 
-						   escaped.split('\n').map(function(line) {
-							   return '<span>' + line + '</span>';
-						   }).join('\n') + 
-						   '</code></pre>';
-				});
-				
-				console.log("MOUNTEA_HTML_GENERATED:" + fallbackHtml);
-				return fallbackHtml;
-			}
-		};
+				return '<pre><code class="language-' + language + '">' + 
+					   escaped.split('\n').map(function(line) {
+						   return '<span>' + line + '</span>';
+					   }).join('\n') + 
+					   '</code></pre>';
+			});
+			var html = simplemde.markdown(processedContent);
+			console.log("MOUNTEA_HTML_GENERATED:" + html);
+			return html;
+		} catch (e) {
+			console.error("MOUNTEA_INFO:Using fallback conversion. Error:", e);
+			var fallbackHtml = simplemde.markdown(content);
+			console.log("MOUNTEA_HTML_GENERATED:" + fallbackHtml);
+			return fallbackHtml;
+		}
+	};
 	</script>
 </body>
 </html>
