@@ -166,6 +166,22 @@ if (editor) {
 		updateLineNumbers();
 		console.log('MOUNTEA_CONTENT_CHANGED:' + editor.value);
 	});
+
+	editor.addEventListener('keydown', function(e) {
+	  if (e.key === 'Tab') {
+	    e.preventDefault();
+
+	    const start = this.selectionStart;
+	    const end = this.selectionEnd;
+
+	    this.value = this.value.substring(0, start) + '\t' + this.value.substring(end);
+
+	    this.selectionStart = this.selectionEnd = start + 1;
+
+	    const event = new Event('input');
+	    this.dispatchEvent(event);
+	  }
+	});
 	
 	// Initialize line numbers
 	updateLineNumbers();
