@@ -95,7 +95,6 @@ const FString dummyURL = R"(
 		});
 		
 		window.setContent = function(content) {
-			console.error("MOUNTEA_INFO:setContent:", content);
 			simplemde.value(content);
 			return true;
 		};
@@ -105,34 +104,51 @@ const FString dummyURL = R"(
 		});
 		
 		window.convertToHTML = function() {
+			var content = simplemde.value();			
 			try {
-				var markdown = simplemde.value();
-				var renderer = new marked.Renderer();
-				renderer.code = function(code, language) {
-					const htmlEscapedCode = code
+				var processedMarkdown = content.replace(/```([a-z]*)\n([\s\S]*?)\n```/g, function(match, language, codeContent) {
+					var escaped = codeContent
 						.replace(/&/g, '&amp;')
 						.replace(/</g, '&lt;')
 						.replace(/>/g, '&gt;')
 						.replace(/"/g, '&quot;')
 						.replace(/'/g, '&#39;');
 					
-					const preservedCode = htmlEscapedCode
-						.split('\n')
-						.map(line => `<span>${line}</span>`)
-						.join('\n');
-					
-					const langClass = language ? ` class="language-${language}"` : '';
-					return `<pre><code${langClass}>${preservedCode}</code></pre>`;
-				};
+					return '<pre><code class="language-' + language + '">' + 
+						   escaped.split('\n').map(function(line) {
+							   return '<span>' + line + '</span>';
+						   }).join('\n') + 
+						   '</code></pre>';
+				});
 				
-				var html = marked.parse(markdown, { renderer: renderer });
+				var html = marked.parse(processedMarkdown, {
+					breaks: false,
+					gfm: true,
+					sanitize: false
+				});
+				
 				console.log("MOUNTEA_HTML_GENERATED:" + html);
 				return html;
-			} catch(e) {
-				console.error("MOUNTEA_INFO:Error in markdown conversion:", e);
-				var html = simplemde.markdown(simplemde.value());
-				console.log("MOUNTEA_HTML_GENERATED:" + html);
-				return html;
+			} catch (e) {
+				console.error("MOUNTEA_INFO:Error:", e);
+				
+				var fallbackHtml = content.replace(/```([a-z]*)\n([\s\S]*?)\n```/g, function(match, language, codeContent) {
+					var escaped = codeContent
+						.replace(/&/g, '&amp;')
+						.replace(/</g, '&lt;')
+						.replace(/>/g, '&gt;')
+						.replace(/"/g, '&quot;')
+						.replace(/'/g, '&#39;');
+					
+					return '<pre><code class="language-' + language + '">' + 
+						   escaped.split('\n').map(function(line) {
+							   return '<span>' + line + '</span>';
+						   }).join('\n') + 
+						   '</code></pre>';
+				});
+				
+				console.log("MOUNTEA_HTML_GENERATED:" + fallbackHtml);
+				return fallbackHtml;
 			}
 		};
 	</script>
@@ -208,7 +224,6 @@ void SMounteaMarkdownEditor::SendContentToEditor()
 	(function attemptSetContent() {
 		if (window.setContent) {
 			const success = window.setContent(")" + Content + R"(");
-			console.log('MOUNTEA_INFO:Content set result:', success);
 			return success;
 		} else {
 			console.log('MOUNTEA_INFO:setContent not available, retrying in 100ms');
