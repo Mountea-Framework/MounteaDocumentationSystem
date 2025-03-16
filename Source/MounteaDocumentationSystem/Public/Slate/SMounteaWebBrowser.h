@@ -8,6 +8,7 @@
 
 DECLARE_DELEGATE_OneParam(FOnLinkClickedDelegate, const FText&);
 DECLARE_DELEGATE_OneParam(FOnContentChangedDelegate, const FString&);
+DECLARE_DELEGATE_OneParam(FOnHtmlGeneratedDelegate, const FString&);
 
 class MOUNTEADOCUMENTATIONSYSTEM_API SMounteaWebBrowser : public SWebBrowser
 {
@@ -40,6 +41,7 @@ public:
 		SLATE_ARGUMENT(int, BrowserFps)
 		SLATE_EVENT(FOnLinkClickedDelegate, OnLinkClicked)
 		SLATE_EVENT(FOnContentChangedDelegate, OnContentChanged)
+		SLATE_EVENT(FOnHtmlGeneratedDelegate, OnHtmlGenerated)
 	SLATE_END_ARGS()
 
 	void Construct(const FArguments& InArgs);
@@ -62,4 +64,5 @@ private:
 
 	FOnLinkClickedDelegate OnLinkClicked;
 	FOnContentChangedDelegate OnContentChanged;
+	FOnHtmlGeneratedDelegate OnHtmlGenerated;
 };

@@ -2,20 +2,14 @@
 
 
 #include "DetailsEditor/MounteaDocumentationPageEditor.h"
-#include "Widgets/Layout/SScrollBox.h"
-#include "Widgets/Text/SMultiLineEditableText.h"
 #include "Widgets/Text/STextBlock.h"
-#include "EditorStyleSet.h"
 #include "Core/MounteaDocumentationPage.h"
-#include "Settings/MounteaDocumentationSystemEditorSettings.h"
 #include "Slate/MounteaMarkdownEditor.h"
 #include "Slate/SMounteaWebBrowser.h"
 #include "TextDecorators/MounteaRichTextDecorators.h"
-#include "Widgets/Text/SMultiLineEditableText.h"
 #include "Widgets/Text/SRichTextBlock.h"
 #include "Style/MounteaDocumentationStyle.h"
 #include "WebBrowser/Public/SWebBrowser.h"
-//#include "WebBrowser/Public/SWebBrowser.h"
 
 #define LOCTEXT_NAMESPACE "MounteaDocumentationEditor"
 

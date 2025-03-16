@@ -8,6 +8,7 @@ void SMounteaWebBrowser::Construct(const FArguments& InArgs)
 	LastLoadedURL = FString();
 	OnLinkClicked = InArgs._OnLinkClicked;
 	OnContentChanged = InArgs._OnContentChanged;
+	OnHtmlGenerated = InArgs._OnHtmlGenerated;
 	bInitialScriptInjected = false;
 	bPendingReloadInjection = false;
 	TimeSinceConstruction = 0.0;
@@ -118,75 +119,62 @@ void SMounteaWebBrowser::CreateLinkHandlerScript()
 
 void SMounteaWebBrowser::CreateInputConsumeScript()
 {
-    // This script preserves the styling while setting up the editor
-    FString Script = R"(
-console.log('Script injected - checking styles');
+	FString Script = R"(
+// Core editor functionality
+const editor = document.getElementById('text-editor');
+const lineNumbers = document.getElementById('line-numbers');
 
-// Log all stylesheets and styles for debugging
-var styles = document.styleSheets;
-console.log('Style sheets found:', styles.length);
-
-for (var i = 0; i < styles.length; i++) {
-    try {
-        console.log('Style sheet', i, ':', styles[i]);
-    } catch (e) {
-        console.log('Error accessing stylesheet', i);
-    }
+// Line numbering function
+function updateLineNumbers() {
+	if (!editor || !lineNumbers) return;
+	
+	const lines = editor.value.split('\n');
+	let lineNumbersHTML = '';
+	for (let i = 1; i <= lines.length; i++) {
+		lineNumbersHTML += i + '<br>';
+	}
+	lineNumbers.innerHTML = lineNumbersHTML;
+	
+	// Position line numbers according to editor's scroll position
+	lineNumbers.style.transform = `translateY(-${editor.scrollTop}px)`;
+	console.log('MOUNTEA_INFO:Line numbers updated:', lines.length);
 }
 
-// Get the editor element
-var editor = document.getElementById('text-editor');
-if (editor) {
-    console.log('Found editor element');
-    console.log('Editor classes:', editor.className);
-    console.log('Line numbers element:', !!document.getElementById('line-numbers'));
-    
-    // Setup input handler with debugging
-    editor.addEventListener('input', function() {
-        console.log('Input event fired');
-        console.log('MOUNTEA_CONTENT_CHANGED:' + editor.value);
-    });
-    
-    // Setup content setting function
-    window.setContent = function(content) {
-        editor.value = content;
-        console.log('Content set, length:', content.length);
-        
-        // Update line numbers if function exists
-        if (window.updateLineNumbers) {
-            window.updateLineNumbers();
-        }
-        
-        return true;
-    };
-    
-    // Setup line numbering function if it doesn't exist
-    if (!window.updateLineNumbers) {
-        window.updateLineNumbers = function() {
-            var lineNumbers = document.getElementById('line-numbers');
-            if (lineNumbers) {
-                var lines = editor.value.split('\n');
-                var html = '';
-                for (var i = 1; i <= lines.length; i++) {
-                    html += i + '<br>';
-                }
-                lineNumbers.innerHTML = html;
-                console.log('Line numbers updated:', lines.length);
-            }
-        };
-        
-        // Initial line numbers
-        window.updateLineNumbers();
-        
-        // Set up automatic line number updates on input
-        editor.addEventListener('input', window.updateLineNumbers);
-    }
+// Setup global content setting function
+window.setContent = function(content) {
+	if (!editor) {
+		console.error('MOUNTEA_INFO:Editor element not found');
+		return false;
+	}
+	
+	editor.value = content;
+	updateLineNumbers();
+	return true;
+};
+
+// Setup event listeners if editor exists
+if (editor) {	
+	// Scroll event for line numbers
+	editor.addEventListener('scroll', function() {
+		if (lineNumbers) {
+			lineNumbers.style.transform = `translateY(-${editor.scrollTop}px)`;
+		}
+	});
+	
+	// Input event for content changes and line numbers
+	editor.addEventListener('input', function() {
+		updateLineNumbers();
+		console.log('MOUNTEA_CONTENT_CHANGED:' + editor.value);
+	});
+	
+	// Initialize line numbers
+	updateLineNumbers();
 } else {
-    console.log('Editor element not found - DOM may not be fully loaded');
+	console.error('MOUNTEA_INFO:Editor element not found - DOM may not be fully loaded');
 }
 )";
 
-    ExecuteJavascript(Script);
+	ExecuteJavascript(Script);
 }
 
 void SMounteaWebBrowser::InjectScripts()
@@ -203,13 +191,12 @@ void SMounteaWebBrowser::InjectScripts()
 
 void SMounteaWebBrowser::HandleConsoleMessage(const FString& Message, const FString& Source, int32 Line, EWebBrowserConsoleLogSeverity Severity)
 {
-	// Add debug logging
-	UE_LOG(LogTemp, Log, TEXT("WebBrowser console: %s"), *Message);
-	
 	const FString LinkPrefix = TEXT("MOUNTEA_LINK_CLICKED:");
 	const FString ContentPrefix = TEXT("MOUNTEA_CONTENT_CHANGED:");
+	const FString InfoPrefix = TEXT("MOUNTEA_INFO:");
+	const FString HtmlPrefix = TEXT("MOUNTEA_HTML_GENERATED:");
 	
-	if (Message.StartsWith(LinkPrefix))
+	if (Message.StartsWith(LinkPrefix) && OnLinkClicked.IsBound())
 	{
 		const FString URL = Message.RightChop(LinkPrefix.Len());
 		OnLinkClicked.Execute(FText::FromString(URL));
@@ -217,7 +204,13 @@ void SMounteaWebBrowser::HandleConsoleMessage(const FString& Message, const FStr
 	else if (Message.StartsWith(ContentPrefix) && OnContentChanged.IsBound())
 	{
 		const FString Content = Message.RightChop(ContentPrefix.Len());
-		UE_LOG(LogTemp, Warning, TEXT("Content changed detected: %s"), *Content.Left(20));
 		OnContentChanged.Execute(Content);
 	}
+	else if (Message.StartsWith(HtmlPrefix) && OnHtmlGenerated.IsBound())
+	{
+		const FString HTML = Message.RightChop(HtmlPrefix.Len());
+		OnHtmlGenerated.Execute(HTML);
+	}
+	else if (Message.StartsWith(InfoPrefix))
+		UE_LOG(LogTemp, Warning, TEXT("%s"), *Message)
 }

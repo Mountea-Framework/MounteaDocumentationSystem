@@ -23,6 +23,7 @@ public:
 	void UpdateMarkdownEditor();
 
 	virtual void Tick(const FGeometry& AllottedGeometry, const double InCurrentTime, const float InDeltaTime) override;
+	void SendContentToEditor();
 
 	FText GetText() const;
 	void SetText(const FText& NewText);
@@ -30,6 +31,7 @@ public:
 private:
 	TWeakObjectPtr<class UMounteaDocumentationPage> EditedPage;
 	TSharedPtr<SMounteaWebBrowser> WebEditorWidget;
+	bool bNeedsContentRefresh = false;
 
 protected:
 
@@ -37,7 +39,8 @@ protected:
 	
 	void HandleChildTextChanged(const FText& NewText);
 	void HandleContentChanged(const FString& NewContent);
-	
+	void HandleHtmlGenerated(const FString& HtmlContent);
+
 	void ConvertMarkdownToRichText() const;
 	void ConvertMarkdownToHTMLText() const;
 	void ConvertMarkdownToHTMLTextOnline() const;
