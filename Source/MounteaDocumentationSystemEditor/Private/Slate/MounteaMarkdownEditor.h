@@ -32,10 +32,9 @@ private:
 	TWeakObjectPtr<class UMounteaDocumentationPage> EditedPage;
 	TSharedPtr<SMounteaWebBrowser> WebEditorWidget;
 	bool bNeedsContentRefresh = false;
+	double lastTime = 0.f;
 
 protected:
-
-	double lastTime = 0.f;
 	
 	void HandleChildTextChanged(const FText& NewText);
 	void HandleContentChanged(const FString& NewContent);

@@ -36,15 +36,16 @@ const FString dummyURL =  R"(
 			display: flex;
 			height: 100%;
 			position: relative;
+			background-color: #2d2d2d;
 		}
 		
 		.line-numbers {
 			position: absolute;
+			background-color: #2d2d2d;
 			top: 0;
 			left: 0;
 			width: 40px;
 			height: 100%;
-			background-color: #2d2d2d;
 			color: #6a6a6a;
 			text-align: right;
 			padding: 10px 5px 10px 0;
@@ -57,10 +58,10 @@ const FString dummyURL =  R"(
 		}
 		
 		.text-editor {
+			background-color: #2d2d2d;
 			flex: 1;
 			width: 100%;
 			padding: 10px 10px 10px 50px;
-			background-color: #1e1e1e;
 			color: #d4d4d4;
 			border: none;
 			resize: none;
@@ -88,6 +89,19 @@ const FString dummyURL =  R"(
 		code {
 			font-family: 'Courier New', Consolas, Monaco, 'Andale Mono', monospace;
 		}
+
+		::-webkit-scrollbar {
+		  width: 10px;
+		}
+		::-webkit-scrollbar-track {
+		  background: #f1f1f1; 
+		}
+		::-webkit-scrollbar-thumb {
+		  background: #888; 
+		}
+		::-webkit-scrollbar-thumb:hover {
+		  background: #555; 
+		}
 	</style>
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.0.3/marked.min.js"></script>
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
@@ -108,7 +122,8 @@ void SMounteaMarkdownEditor::Construct(const FArguments& InArgs)
 {
 	EditedPage = InArgs._EditedPage;
 	bNeedsContentRefresh = true;
-	UpdateMarkdownEditor();
+	lastTime = 0.f;
+	UpdateMarkdownEditor();	
 }
 
 BEGIN_FUNCTION_BUILD_OPTIMIZATION
@@ -130,6 +145,7 @@ void SMounteaMarkdownEditor::UpdateMarkdownEditor()
 	{
 		WebEditorWidget->LoadString(dummyURL, TEXT(""));
 		bNeedsContentRefresh = true;
+		lastTime = 0.f;
 	}
 }
 
@@ -139,14 +155,14 @@ void SMounteaMarkdownEditor::Tick(const FGeometry& AllottedGeometry, const doubl
 {
 	SCompoundWidget::Tick(AllottedGeometry, InCurrentTime, InDeltaTime);
 
-	static float elapsedTime = 0.0f;
 	if (bNeedsContentRefresh)
 	{
-		elapsedTime += InDeltaTime;
-		if (elapsedTime > 2.5f && WebEditorWidget.IsValid() && EditedPage.IsValid())
+		lastTime += InDeltaTime;
+		if (lastTime > 3.f && WebEditorWidget.IsValid() && EditedPage.IsValid())
 		{
 			SendContentToEditor();
 			bNeedsContentRefresh = false;
+			lastTime = 0.f;
 		}
 	}
 }
@@ -164,7 +180,20 @@ void SMounteaMarkdownEditor::SendContentToEditor()
 	Content.ReplaceInline(TEXT("\t"), TEXT("\\t"));
 	Content.ReplaceInline(TEXT("'"), TEXT("\\'"));
 	
-	FString JavaScript = FString::Printf(TEXT("if(window.setContent) { window.setContent(\"%s\"); }"), *Content);
+	FString JavaScript = R"(
+    (function attemptSetContent() {
+        if (window.setContent) {
+            const success = window.setContent(")" + Content + R"(");
+            console.log('MOUNTEA_INFO:Content set result:', success);
+            return success;
+        } else {
+            console.log('MOUNTEA_INFO:setContent not available, retrying in 100ms');
+            setTimeout(attemptSetContent, 100);
+            return false;
+        }
+    })();
+    )";
+    
 	WebEditorWidget->ExecuteJavascript(JavaScript);
 }
 
@@ -248,33 +277,39 @@ void SMounteaMarkdownEditor::ConvertMarkdownToHTMLTextOnline() const
 	}
 	
 	try {
-		// Use DOMPurify if available
-		const purify = typeof DOMPurify !== 'undefined' ? DOMPurify.sanitize : (x) => x;
-		
-		// Create custom renderer
+		// Create custom renderer that preserves whitespace
 		const renderer = new marked.Renderer();
 		
-		// Override code block rendering to use Prism
+		// This is the key fix for code blocks
 		renderer.code = function(code, language) {
-			// Preserve original whitespace and escape HTML properly
-			code = code
+			// Preserve line breaks and indentation
+			const htmlEscapedCode = code
 				.replace(/&/g, '&amp;')
 				.replace(/</g, '&lt;')
 				.replace(/>/g, '&gt;')
 				.replace(/"/g, '&quot;')
 				.replace(/'/g, '&#39;');
-				
-			const langClass = language ? `language-${language}` : '';
-			return `<pre><code class="${langClass}">${code}</code></pre>`;
+			
+			// Make sure each line is properly preserved
+			const preservedCode = htmlEscapedCode
+				.split('\n')
+				.map(line => `<span>${line}</span>`)
+				.join('\n');
+			
+			const langClass = language ? ` class="language-${language}"` : '';
+			return `<pre><code${langClass}>${preservedCode}</code></pre>`;
 		};
 		
-		// Configure marked with the custom renderer
+		// Configure marked with the custom renderer and options that preserve whitespace
 		marked.setOptions({
 			renderer: renderer,
 			gfm: true,
 			breaks: false,
 			pedantic: false,
-			smartLists: true
+			sanitize: false,
+			smartLists: true,
+			smartypants: false,
+			xhtml: true
 		});
 		
 		// Get markdown from the editor
@@ -301,39 +336,5 @@ void SMounteaMarkdownEditor::ConvertMarkdownToHTMLTextOnline() const
 	if (WebEditorWidget.IsValid())
 	{
 		WebEditorWidget->ExecuteJavascript(JavaScript);
-	}
-	else
-	{
-		TSharedRef<TJsonWriter<TCHAR, TCondensedJsonPrintPolicy<TCHAR>>> Writer = TJsonWriterFactory<TCHAR, TCondensedJsonPrintPolicy<TCHAR>>::Create(&text);
-		Writer->WriteObjectStart();
-		Writer->WriteValue(TEXT("text"), EditedPage->PageContent.ToString());
-		Writer->WriteValue(TEXT("mode"), TEXT("markdown"));
-		Writer->WriteValue(TEXT("X-GitHub-Api-Version"), TEXT("2022-11-28"));
-		Writer->WriteObjectEnd();
-		Writer->Close();
-
-		TSharedRef<IHttpRequest, ESPMode::ThreadSafe> Request = FHttpModule::Get().CreateRequest();
-		Request->SetURL(TEXT("https://api.github.com/markdown"));
-		Request->SetVerb(TEXT("POST"));
-		Request->SetHeader(TEXT("Content-Type"), TEXT("application/json"));
-		Request->SetHeader(TEXT("User-Agent"), TEXT("MounteaDocumentationSystem"));
-		Request->SetContentAsString(text);
-
-		Request->OnProcessRequestComplete().BindLambda([this](FHttpRequestPtr Request, const FHttpResponsePtr& Response, bool bSuccess)
-		{
-			if (bSuccess && Response.IsValid() && (Response->GetResponseCode() >= 200 && Response->GetResponseCode() < 300))
-			{
-				FString HtmlResponse = Response->GetContentAsString();
-				const FString newHTML = UMounteaDocumentationSystemStatics::RawHTMLToPage(HtmlResponse);
-				EditedPage->TranslatedPageContent = FText::FromString(newHTML);
-			}
-			else
-			{
-				UE_LOG(LogTemp, Error, TEXT("Markdown conversion failed!/nCode: %d\nMessage: %s"), Response->GetResponseCode(), *Response->GetContentAsString());
-				ConvertMarkdownToHTMLText();
-			}
-		});
-
-		Request->ProcessRequest();
 	}
 }
