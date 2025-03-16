@@ -116,13 +116,13 @@ TSharedRef<SDockTab> FMounteaDocumentationPageEditor::SpawnMarkdownTab(const FSp
 		"<title>Empty Page</title>"
 		"<style>"
 		"body {"
-		"    background-color: white;"
-		"    display: flex;"
-		"    justify-content: center;"
-		"    align-items: center;"
-		"    height: 60vh;"
-		"    font-family: Arial, sans-serif;"
-		"    color: #666;"
+		"	background-color: white;"
+		"	display: flex;"
+		"	justify-content: center;"
+		"	align-items: center;"
+		"	height: 60vh;"
+		"	font-family: Arial, sans-serif;"
+		"	color: #666;"
 		"}"
 		"</style>"
 		"</head>"
@@ -166,7 +166,7 @@ TSharedRef<SDockTab> FMounteaDocumentationPageEditor::SpawnMarkdownTab(const FSp
 			.FillWidth(0.5f)
 			[
 				SNew(SBorder)
-				.Padding(0) //10
+				.Padding(0)
 				.BorderBackgroundColor(FLinearColor::Transparent)
 				[
 					SNew(SMounteaMarkdownEditor)

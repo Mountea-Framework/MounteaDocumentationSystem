@@ -11,9 +11,9 @@ class FMounteaMarkdownDecorator : public ITextDecorator
 {
 public:
 	static TSharedRef<FMounteaMarkdownDecorator> Create();
-    
+	
 	virtual ~FMounteaMarkdownDecorator() {}
-    
+	
 	// ITextDecorator interface
 	virtual bool Supports(const FTextRunParseResults& RunParseResult, const FString& Text) const override;
 	virtual TSharedRef<ISlateRun> Create(const TSharedRef<FTextLayout>& TextLayout, const FTextRunParseResults& RunParseResult, const FString& OriginalText, const TSharedRef<FString>& InOutModelText, const ISlateStyle* Style) override;

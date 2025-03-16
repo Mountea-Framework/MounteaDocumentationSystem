@@ -17,101 +17,125 @@
 #include "Slate/SMounteaWebBrowser.h"
 #include "Statics/MounteaDocumentationSystemStatics.h"
 
-const FString dummyURL =  R"(
+const FString dummyURL = R"(
 <!DOCTYPE html>
 <html>
 <head>
 	<meta charset="UTF-8">
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.css">
+	<script src="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 	<style>
-		html, body {
-			height: 100%;
-			margin: 0;
-			padding: 0;
-			overflow: hidden;
-			background-color: #1e1e1e;
+		html, body { 
+			height: 100%; 
+			margin: 0; 
+			padding: 0; 
+			overflow: hidden; 
 			font-family: 'Courier New', monospace;
 		}
 		
-		.editor-container {
+		#editor-container { 
+			height: 100%; 
 			display: flex;
-			height: 100%;
-			position: relative;
-			background-color: #2d2d2d;
+			flex-direction: column;
 		}
 		
-		.line-numbers {
-			position: absolute;
-			background-color: #2d2d2d;
+		.editor-toolbar { 
+			flex: 0 0 auto;
+			position: sticky;
 			top: 0;
-			left: 0;
-			width: 40px;
-			height: 100%;
-			color: #6a6a6a;
-			text-align: right;
-			padding: 10px 5px 10px 0;
-			font-size: 14px;
-			line-height: 1.5;
-			font-family: 'Courier New', monospace;
-			z-index: 10;
-			pointer-events: none;
-			user-select: none;
+			z-index: 100;
+			background-color: #f6f6f6;
+			border-bottom: 1px solid #ddd;
 		}
 		
-		.text-editor {
-			background-color: #2d2d2d;
-			flex: 1;
-			width: 100%;
-			padding: 10px 10px 10px 50px;
-			color: #d4d4d4;
-			border: none;
-			resize: none;
-			outline: none;
-			font-size: 14px;
-			line-height: 1.5;
-			font-family: 'Courier New', monospace;
-			tab-size: 4;
+		.CodeMirror, .CodeMirror-scroll, .CodeMirror pre, .editor-preview { 
+			font-family: 'Courier New', monospace !important;
+			font-size: 14px !important;
+		}
+		
+		.CodeMirror { 
+			flex: 1 1 auto;
+			height: auto !important;
+			min-height: 0 !important;
 		}
 
-		/* Essential code block styling */
-		pre, code {
-			white-space: pre !important;
-			tab-size: 4;
+		.editor-preview {
+			font-family: 'Courier New', monospace !important;
 		}
 		
-		pre {
-			padding: 1em;
-			margin: .5em 0;
-			overflow: auto;
-			background: #f5f5f5;
-			border: 1px solid #ccc;
-		}
-		
-		code {
-			font-family: 'Courier New', Consolas, Monaco, 'Andale Mono', monospace;
+		.editor-preview code, .editor-preview pre {
+			font-family: 'Courier New', monospace !important;
 		}
 
 		::-webkit-scrollbar {
-		  width: 10px;
+			width: 10px;
 		}
 		::-webkit-scrollbar-track {
-		  background: #f1f1f1; 
+			background: #f1f1f1; 
 		}
 		::-webkit-scrollbar-thumb {
-		  background: #888; 
+			background: #888; 
 		}
 		::-webkit-scrollbar-thumb:hover {
-		  background: #555; 
+			background: #555; 
 		}
 	</style>
-	<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.0.3/marked.min.js"></script>
-	<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
-	<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-cpp.min.js"></script>
 </head>
 <body>
-	<div class="editor-container">
-		<div id="line-numbers" class="line-numbers"></div>
-		<textarea id="text-editor" class="text-editor" spellcheck="false"></textarea>
+	<div id="editor-container">
+		<textarea class="text-editor" id="editor"></textarea>
 	</div>
+	
+	<script>
+		var simplemde = new SimpleMDE({ 
+			element: document.getElementById("editor"),
+			spellChecker: false,
+			toolbar: false
+		});
+		
+		window.setContent = function(content) {
+			console.error("MOUNTEA_INFO:setContent:", content);
+			simplemde.value(content);
+			return true;
+		};
+		
+		simplemde.codemirror.on("change", function() {
+			console.log("MOUNTEA_CONTENT_CHANGED:" + simplemde.value());
+		});
+		
+		window.convertToHTML = function() {
+			try {
+				var markdown = simplemde.value();
+				var renderer = new marked.Renderer();
+				renderer.code = function(code, language) {
+					const htmlEscapedCode = code
+						.replace(/&/g, '&amp;')
+						.replace(/</g, '&lt;')
+						.replace(/>/g, '&gt;')
+						.replace(/"/g, '&quot;')
+						.replace(/'/g, '&#39;');
+					
+					const preservedCode = htmlEscapedCode
+						.split('\n')
+						.map(line => `<span>${line}</span>`)
+						.join('\n');
+					
+					const langClass = language ? ` class="language-${language}"` : '';
+					return `<pre><code${langClass}>${preservedCode}</code></pre>`;
+				};
+				
+				var html = marked.parse(markdown, { renderer: renderer });
+				console.log("MOUNTEA_HTML_GENERATED:" + html);
+				return html;
+			} catch(e) {
+				console.error("MOUNTEA_INFO:Error in markdown conversion:", e);
+				var html = simplemde.markdown(simplemde.value());
+				console.log("MOUNTEA_HTML_GENERATED:" + html);
+				return html;
+			}
+		};
+	</script>
 </body>
 </html>
 )";
@@ -158,7 +182,7 @@ void SMounteaMarkdownEditor::Tick(const FGeometry& AllottedGeometry, const doubl
 	if (bNeedsContentRefresh)
 	{
 		lastTime += InDeltaTime;
-		if (lastTime > 3.f && WebEditorWidget.IsValid() && EditedPage.IsValid())
+		if (lastTime > 1.f && WebEditorWidget.IsValid() && EditedPage.IsValid())
 		{
 			SendContentToEditor();
 			bNeedsContentRefresh = false;
@@ -181,19 +205,19 @@ void SMounteaMarkdownEditor::SendContentToEditor()
 	Content.ReplaceInline(TEXT("'"), TEXT("\\'"));
 	
 	FString JavaScript = R"(
-    (function attemptSetContent() {
-        if (window.setContent) {
-            const success = window.setContent(")" + Content + R"(");
-            console.log('MOUNTEA_INFO:Content set result:', success);
-            return success;
-        } else {
-            console.log('MOUNTEA_INFO:setContent not available, retrying in 100ms');
-            setTimeout(attemptSetContent, 100);
-            return false;
-        }
-    })();
-    )";
-    
+	(function attemptSetContent() {
+		if (window.setContent) {
+			const success = window.setContent(")" + Content + R"(");
+			console.log('MOUNTEA_INFO:Content set result:', success);
+			return success;
+		} else {
+			console.log('MOUNTEA_INFO:setContent not available, retrying in 100ms');
+			setTimeout(attemptSetContent, 100);
+			return false;
+		}
+	})();
+	)";
+	
 	WebEditorWidget->ExecuteJavascript(JavaScript);
 }
 
@@ -223,6 +247,7 @@ void SMounteaMarkdownEditor::HandleContentChanged(const FString& NewContent)
 {
 	if (!EditedPage.IsValid()) return;
 	EditedPage->PageContent = FText::FromString(NewContent);
+	EditedPage->MarkPackageDirty();
 
 	ConvertMarkdownToHTMLTextOnline();
 }
@@ -258,6 +283,12 @@ void SMounteaMarkdownEditor::ConvertMarkdownToHTMLText() const
 
 void SMounteaMarkdownEditor::ConvertMarkdownToHTMLTextOnline() const
 {
+	if (!EditedPage.IsValid() || !WebEditorWidget.IsValid()) return;
+	
+	FString JavaScript = "window.convertToHTML();";
+	WebEditorWidget->ExecuteJavascript(JavaScript);
+	
+	/*
 	if (!EditedPage.IsValid()) return;
 
 	FString text = EditedPage->PageContent.ToString();
@@ -337,4 +368,5 @@ void SMounteaMarkdownEditor::ConvertMarkdownToHTMLTextOnline() const
 	{
 		WebEditorWidget->ExecuteJavascript(JavaScript);
 	}
+	*/
 }

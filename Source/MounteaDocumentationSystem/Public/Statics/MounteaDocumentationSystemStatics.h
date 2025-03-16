@@ -128,7 +128,7 @@ namespace MounteaMarkdownHTMLPatterns
 	inline const TCHAR* ItalicPattern = TEXT("(?<!\\*)\\*([\\s\\S]+?)\\*(?!\\*)");
 	inline const TCHAR* CodeBlockPattern = TEXT("```([\\s\\S]+?)```");
 	inline const TCHAR* InlineCodePattern = TEXT("`([^`]+?)`");
-    
+	
 	// Headers
 	inline const TCHAR* Header1Pattern = TEXT("(?m)^#\\s+([\\s\\S]+?)$");
 	inline const TCHAR* Header2Pattern = TEXT("(?m)^##\\s+([\\s\\S]+?)$");
@@ -136,20 +136,20 @@ namespace MounteaMarkdownHTMLPatterns
 	inline const TCHAR* Header4Pattern = TEXT("(?m)^####\\s+([\\s\\S]+?)$");
 	inline const TCHAR* Header5Pattern = TEXT("(?m)^#####\\s+([\\s\\S]+?)$");
 	inline const TCHAR* Header6Pattern = TEXT("(?m)^######\\s+([\\s\\S]+?)$");
-    
+	
 	// Links and images
 	inline const TCHAR* LinkPattern = TEXT("\\[([^\\]]+?)\\]\\(([^\\)\\s]+)(?:\\s+\"([^\"]+?)\")?\\)");
 	inline const TCHAR* RegularLinkPattern = TEXT("\\[([^!\\[]*)\\]\\(([^\\)]+)\\)");
 	inline const TCHAR* ImagePattern = TEXT("!\\[([^\\]]*?)\\]\\(([^\\)\\s]+)(?:\\s+\"([^\"]+?)\")?\\)");
 	inline const TCHAR* BadgePattern = TEXT("\\[!\\[([^\\]]+)\\]\\(([^\\)]+)\\)\\]\\(([^\\)]+)\\)");
-    
+	
 	// Lists
 	inline const TCHAR* UnorderedListPattern = TEXT("^-\\s+(.+)$");
 	inline const TCHAR* OrderedListPattern = TEXT("^\\s*\\d+\\.\\s+.*$");
-    
+	
 	// Blockquotes
 	inline const TCHAR* BlockquotePattern = TEXT("^>\\s+(.+)$");
-    
+	
 	// Horizontal rule
 	inline const TCHAR* HorizontalRulePattern = TEXT("^(?:\\*\\*\\*|---|___)\\s*$");
 	

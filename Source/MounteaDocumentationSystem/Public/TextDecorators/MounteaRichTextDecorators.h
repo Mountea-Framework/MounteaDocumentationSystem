@@ -106,6 +106,6 @@ namespace MounteaTextTags
 	static constexpr TCHAR CodeMarker = TEXT('`');
 	static constexpr TCHAR LinkOpenMarker = TEXT('<');
 	static constexpr TCHAR LinkCloseMarker = TEXT('>');
-    
+	
 	static constexpr const TCHAR* CodeBlockMarker = TEXT("```");
 }
